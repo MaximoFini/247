@@ -5,7 +5,7 @@
 @layer base {
   :root {
     /* 247 Urban Cyber-Trap Color System */
-    --background: 0 0% 4%; /* #0A0A0A deep charcoal */
+    --background: 0 0% 15%; /* Gray for testing */
     --foreground: 72 100% 55%; /* Toxic lime for primary text */
     
     --card: 0 0% 6%;
