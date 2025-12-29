@@ -1,17 +1,13 @@
-export interface FileItem {
-  id: string;
-  name: string;
-  subject: string;
-  commission: string;
-  fileType: 'pdf' | 'doc' | 'ppt' | 'xls' | 'zip' | 'img' | 'other';
-  size: string;
-  uploadDate: string;
-  downloads: number;
-}
+import type {
+  FileItem,
+  Professor,
+  ProfessorRating,
+  SelectOption,
+} from "@/types";
 
 export const subjects = [
   "Programación I",
-  "Programación II", 
+  "Programación II",
   "Matemática Discreta",
   "Álgebra Lineal",
   "Análisis Matemático I",
@@ -29,7 +25,7 @@ export const subjects = [
 
 export const commissions = [
   "1K01",
-  "1K02", 
+  "1K02",
   "1K03",
   "1K04",
   "1K05",
@@ -40,13 +36,13 @@ export const commissions = [
   "3K02",
 ] as const;
 
-export const fileTypes = [
-  { value: 'pdf', label: 'PDF' },
-  { value: 'doc', label: 'DOC' },
-  { value: 'ppt', label: 'PPT' },
-  { value: 'xls', label: 'XLS' },
-  { value: 'zip', label: 'ZIP' },
-  { value: 'img', label: 'IMG' },
+export const fileTypes: readonly SelectOption[] = [
+  { value: "apunte", label: "APUNTE" },
+  { value: "resumen", label: "RESUMEN" },
+  { value: "parcial", label: "PARCIAL" },
+  { value: "final", label: "FINAL" },
+  { value: "tp", label: "TP" },
+  { value: "guia", label: "GUÍA" },
 ] as const;
 
 export const mockFiles: FileItem[] = [
@@ -171,3 +167,182 @@ export const mockFiles: FileItem[] = [
     downloads: 534,
   },
 ];
+
+export const uploadFileTypes: readonly SelectOption[] = [
+  { value: "apunte", label: "APUNTE" },
+  { value: "resumen", label: "RESUMEN" },
+  { value: "parcial", label: "PARCIAL" },
+  { value: "final", label: "FINAL" },
+  { value: "tp", label: "TP" },
+  { value: "guia", label: "GUÍA" },
+] as const;
+
+export const mockProfessors: readonly Professor[] = [
+  {
+    id: "1",
+    nombre: "PROF. LÓPEZ",
+    materia: "Física I",
+    comision: "1K03",
+    cantidadValoraciones: 52,
+    promedioGeneral: 9.2,
+    ratings: {
+      claridad: 9.2,
+      dificultad: 8.0,
+      puntualidad: 8.7,
+      disponibilidad: 9.0,
+      material: 9.5,
+    },
+  },
+  {
+    id: "2",
+    nombre: "PROF. GARCÍA",
+    materia: "Programación I",
+    comision: "1K01",
+    cantidadValoraciones: 78,
+    promedioGeneral: 8.5,
+    ratings: {
+      claridad: 8.8,
+      dificultad: 7.5,
+      puntualidad: 9.0,
+      disponibilidad: 8.2,
+      material: 8.5,
+    },
+  },
+  {
+    id: "3",
+    nombre: "PROF. MARTÍNEZ",
+    materia: "Álgebra Lineal",
+    comision: "1K03",
+    cantidadValoraciones: 45,
+    promedioGeneral: 7.8,
+    ratings: {
+      claridad: 7.5,
+      dificultad: 8.5,
+      puntualidad: 7.2,
+      disponibilidad: 8.0,
+      material: 7.8,
+    },
+  },
+  {
+    id: "4",
+    nombre: "PROF. RODRÍGUEZ",
+    materia: "Bases de Datos",
+    comision: "2K02",
+    cantidadValoraciones: 63,
+    promedioGeneral: 9.0,
+    ratings: {
+      claridad: 9.3,
+      dificultad: 7.8,
+      puntualidad: 9.5,
+      disponibilidad: 8.8,
+      material: 9.1,
+    },
+  },
+  {
+    id: "5",
+    nombre: "PROF. FERNÁNDEZ",
+    materia: "Análisis Matemático I",
+    comision: "1K04",
+    cantidadValoraciones: 89,
+    promedioGeneral: 6.5,
+    ratings: {
+      claridad: 6.0,
+      dificultad: 9.2,
+      puntualidad: 6.8,
+      disponibilidad: 5.5,
+      material: 6.5,
+    },
+  },
+  {
+    id: "6",
+    nombre: "PROF. SÁNCHEZ",
+    materia: "Programación II",
+    comision: "1K02",
+    cantidadValoraciones: 71,
+    promedioGeneral: 8.8,
+    ratings: {
+      claridad: 9.0,
+      dificultad: 8.0,
+      puntualidad: 8.5,
+      disponibilidad: 9.2,
+      material: 8.9,
+    },
+  },
+  {
+    id: "7",
+    nombre: "PROF. TORRES",
+    materia: "Sistemas Operativos",
+    comision: "3K01",
+    cantidadValoraciones: 38,
+    promedioGeneral: 7.2,
+    ratings: {
+      claridad: 7.0,
+      dificultad: 8.5,
+      puntualidad: 7.5,
+      disponibilidad: 6.8,
+      material: 7.2,
+    },
+  },
+  {
+    id: "8",
+    nombre: "PROF. DÍAZ",
+    materia: "Algoritmos y Estructuras de Datos",
+    comision: "2K01",
+    cantidadValoraciones: 95,
+    promedioGeneral: 9.5,
+    ratings: {
+      claridad: 9.8,
+      dificultad: 8.2,
+      puntualidad: 9.5,
+      disponibilidad: 9.7,
+      material: 9.6,
+    },
+  },
+];
+
+/**
+ * Lista de famosos argentinos de TV para generar apodos aleatorios
+ */
+const argentinosFamosos: readonly string[] = [
+  "Marcelo Tinelli",
+  "Susana Giménez",
+  "Mirtha Legrand",
+  "Jorge Rial",
+  "Ángel de Brito",
+  "Wanda Nara",
+  "Florencia Peña",
+  "Carmen Barbieri",
+  "Moria Casán",
+  "Yanina Latorre",
+  "Guido Kaczka",
+  "Santiago del Moro",
+  "Luis Ventura",
+  "Laura Ubfal",
+  "Nancy Pazos",
+  "Marley",
+  "Cinthia Fernández",
+  "Lizy Tagliani",
+  "Flavio Mendoza",
+  "Aníbal Pachano",
+  "Vicky Xipolitakis",
+  "José María Listorti",
+  "Flor de la V",
+  "Hernán Drago",
+  "Alejandro Fantino",
+  "Alonso Mazza",
+  "Jorge Carrascal",
+  "Roman Riquelme",
+  "Chanchi Riquelme",
+  "Sol Perez Prime",
+  "Mauro Icardi",
+  "Fan de la Coscu Army",
+  "Chicho Serna",
+];
+
+/**
+ * Retorna un apodo aleatorio de la lista de famosos argentinos
+ */
+export const getRandomApodo = (): string => {
+  const random = Math.floor(Math.random() * argentinosFamosos.length);
+  return argentinosFamosos[random];
+};

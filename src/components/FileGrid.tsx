@@ -6,7 +6,7 @@ interface FileGridProps {
   title?: string;
 }
 
-const FileGrid = ({ files, title = "ARCHIVOS RECIENTES" }: FileGridProps) => {
+const FileGrid = ({ files, title = "ARCHIVOS" }: FileGridProps) => {
   if (files.length === 0) {
     return (
       <div className="border-2 border-dashed border-muted-foreground p-12 text-center">
@@ -29,7 +29,7 @@ const FileGrid = ({ files, title = "ARCHIVOS RECIENTES" }: FileGridProps) => {
           {files.length} ARCHIVOS
         </span>
       </div>
-      
+
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {files.map((file) => (
           <FileCard key={file.id} file={file} />
