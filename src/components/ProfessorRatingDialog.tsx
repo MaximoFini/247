@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { X } from "lucide-react";
+import { Link } from "react-router-dom";
 import type { Professor } from "@/types";
 import { supabase } from "@/lib/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -126,7 +127,7 @@ const ProfessorRatingDialog = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-      <div className="relative w-full max-w-2xl border-4 border-primary bg-background">
+      <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto border-4 border-primary bg-background">
         {/* Header */}
         <div className="flex items-center justify-between border-b-4 border-primary bg-primary p-4">
           <h2 className="font-brutal text-2xl uppercase text-primary-foreground">
@@ -259,6 +260,12 @@ const ProfessorRatingDialog = ({
                 Necesitás estar registrado en la plataforma para poder enviar
                 puntuaciones a profesores
               </p>
+              <Link
+                to="/login"
+                className="mt-3 inline-block border-2 border-yellow-500 bg-yellow-500 px-6 py-2 font-mono text-sm uppercase tracking-widest text-black transition-all hover:bg-transparent hover:text-yellow-500"
+              >
+                Iniciar Sesión
+              </Link>
             </div>
           )}
         </div>

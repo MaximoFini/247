@@ -12,12 +12,31 @@
     />
     <meta
       name="keywords"
-      content="UTN, ingeniería en sistemas, parciales, finales, resúmenes, apuntes, TPs, guías, universidad, archivos, estudiantes, análisis matemático, física, álgebra, sintaxis, paradigmas, base de datos"
+      content="UTN, ingeniería en sistemas, parciales, finales, resúmenes, apuntes, TPs, guías, universidad, archivos, estudiantes, análisis matemático, física, álgebra, sintaxis, paradigmas, base de datos, FRBA, Buenos Aires, exámenes, material de estudio"
     />
     <meta name="author" content="247" />
     <meta name="robots" content="index, follow" />
+    <meta
+      name="googlebot"
+      content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1"
+    />
+    <meta
+      name="bingbot"
+      content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1"
+    />
     <meta name="theme-color" content="#22c55e" />
+    <meta name="msapplication-TileColor" content="#22c55e" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="apple-mobile-web-app-title" content="247 UTN" />
+    <meta name="application-name" content="247 - Archivos UTN" />
+    <meta name="format-detection" content="telephone=no" />
     <link rel="canonical" href="https://247.com.ar" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 
     <!-- Open Graph / Facebook -->
     <meta
@@ -50,18 +69,42 @@
       content="https://lovable.dev/opengraph-image-p98pqg.png"
     />
 
-    <!-- Structured Data -->
+    <!-- Structured Data - WebSite -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
         "@type": "WebSite",
-        "name": "247",
+        "name": "247 - Archivos UTN",
+        "alternateName": "247 UTN",
         "description": "Banco de archivos colaborativo para estudiantes de Ingeniería en Sistemas de la UTN",
         "url": "https://247.com.ar",
+        "inLanguage": "es-AR",
         "potentialAction": {
           "@type": "SearchAction",
-          "target": "https://247.com.ar/?q={search_term_string}",
+          "target": {
+            "@type": "EntryPoint",
+            "urlTemplate": "https://247.com.ar/?q={search_term_string}"
+          },
           "query-input": "required name=search_term_string"
+        }
+      }
+    </script>
+
+    <!-- Structured Data - Organization -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "EducationalOrganization",
+        "name": "247",
+        "url": "https://247.com.ar",
+        "description": "Plataforma colaborativa de archivos académicos para estudiantes de UTN",
+        "areaServed": {
+          "@type": "Country",
+          "name": "Argentina"
+        },
+        "audience": {
+          "@type": "EducationalAudience",
+          "educationalRole": "student"
         }
       }
     </script>
