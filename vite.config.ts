@@ -18,14 +18,7 @@ export default defineConfig(({ mode }) => ({
   build: {
     // Optimizaciones de build para producción
     target: "esnext",
-    minify: "terser",
-    terserOptions: {
-      compress: {
-        drop_console: true, // Eliminar console.log en producción
-        drop_debugger: true,
-        pure_funcs: ["console.log", "console.info", "console.debug"],
-      },
-    },
+    minify: "esbuild",
     // Code splitting optimizado
     rollupOptions: {
       output: {
