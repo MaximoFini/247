@@ -1,13 +1,17 @@
-import { Search } from "lucide-react";
-import { useState } from "react";
+import { Search, Loader2 } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface TerminalSearchProps {
   onSearch: (query: string) => void;
   placeholder?: string;
+  isSearching?: boolean; // Indica si hay una búsqueda en progreso
 }
 
-const TerminalSearch = ({ onSearch }: TerminalSearchProps) => {
+const TerminalSearch = ({
+  onSearch,
+  isSearching = false,
+}: TerminalSearchProps) => {
   const [query, setQuery] = useState("");
   const [isFocused, setIsFocused] = useState(false);
   const { user, dbUser } = useAuth();
@@ -27,9 +31,18 @@ const TerminalSearch = ({ onSearch }: TerminalSearchProps) => {
 
   const username = getUserName();
 
+  // Llamar onSearch cada vez que cambia el query (el debounce se maneja en el hook)
+  const handleChange = useCallback(
+    (value: string) => {
+      setQuery(value);
+      onSearch(value);
+    },
+    [onSearch]
+  );
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSearch(query);
+    // No es necesario hacer nada aquí, la búsqueda es en tiempo real
   };
 
   return (
@@ -49,7 +62,7 @@ const TerminalSearch = ({ onSearch }: TerminalSearchProps) => {
         <input
           type="text"
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => handleChange(e.target.value)}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           placeholder=""
@@ -63,13 +76,15 @@ const TerminalSearch = ({ onSearch }: TerminalSearchProps) => {
           </span>
         )}
 
-        <button
-          type="submit"
-          className="flex h-full items-center gap-2 border-l-4 border-primary bg-primary px-8 py-6 font-mono text-sm uppercase tracking-widest text-primary-foreground transition-all hover:bg-primary/80 glitch-hover"
-        >
-          <Search className="h-5 w-5" />
-          BUSCAR
-        </button>
+        {/* Indicador de búsqueda en progreso */}
+        <div className="flex h-full items-center gap-2 border-l-4 border-primary bg-primary px-8 py-6 font-mono text-sm uppercase tracking-widest text-primary-foreground">
+          {isSearching ? (
+            <Loader2 className="h-5 w-5 animate-spin" />
+          ) : (
+            <Search className="h-5 w-5" />
+          )}
+          {isSearching ? "BUSCANDO..." : "BUSCAR"}
+        </div>
       </div>
     </form>
   );

@@ -6,29 +6,49 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AdminRoute } from "@/components/AdminRoute";
-import { lazy, Suspense } from "react";
-import { Loader2 } from "lucide-react";
+import { lazy, Suspense, memo } from "react";
 
-// Componente de carga
-const PageLoader = () => (
+// Componente de carga optimizado con memo para evitar re-renders
+const PageLoader = memo(() => (
   <div className="min-h-screen bg-background flex items-center justify-center">
-    <Loader2 className="h-12 w-12 animate-spin text-primary" />
+    <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
   </div>
-);
+));
+PageLoader.displayName = "PageLoader";
 
-// Páginas públicas
-import Index from "./pages/Index";
-import Login from "./pages/Login";
-import Profesores from "./pages/Profesores";
-import NotFound from "./pages/NotFound";
-import Privacy from "@/pages/Privacy";
-import Terms from "@/pages/Terms";
+// Skeleton loader para contenido (más rápido que spinner)
+const ContentSkeleton = memo(() => (
+  <div className="min-h-screen bg-background">
+    <div className="h-16 border-b-2 border-primary/20 bg-background/95" />
+    <div className="container mx-auto px-4 py-8 space-y-4">
+      <div className="h-32 bg-primary/5 animate-pulse rounded" />
+      <div className="h-16 bg-primary/5 animate-pulse rounded" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="h-48 bg-primary/5 animate-pulse rounded" />
+        ))}
+      </div>
+    </div>
+  </div>
+));
+ContentSkeleton.displayName = "ContentSkeleton";
 
-// Páginas protegidas (usuarios autenticados)
-import Perfil from "./pages/Perfil";
-import Subir from "./pages/Subir";
+// ===== LAZY LOADING AGRESIVO =====
+// Página principal cargada con prioridad
+const Index = lazy(() => import("./pages/Index"));
 
-// Páginas admin (lazy loading para mejor performance)
+// Páginas públicas con lazy loading
+const Login = lazy(() => import("./pages/Login"));
+const Profesores = lazy(() => import("./pages/Profesores"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const Privacy = lazy(() => import("@/pages/Privacy"));
+const Terms = lazy(() => import("@/pages/Terms"));
+
+// Páginas protegidas (usuarios autenticados) - lazy
+const Perfil = lazy(() => import("./pages/Perfil"));
+const Subir = lazy(() => import("./pages/Subir"));
+
+// Páginas admin (lazy loading)
 const AdminDashboard = lazy(() => import("@/pages/admin/Dashboard"));
 const AdminArchivos = lazy(() => import("@/pages/admin/Archivos"));
 const ArchivosReportados = lazy(
@@ -39,15 +59,19 @@ const AdminMaterias = lazy(() => import("@/pages/admin/Materias"));
 const AdminComisiones = lazy(() => import("@/pages/admin/Comisiones"));
 const AdminAsignaciones = lazy(() => import("@/pages/admin/Asignaciones"));
 
-import UTNFollower from "./components/AlonsoFollower";
+// Componente auxiliar con lazy (cargado después del mount inicial)
+const AlonsoFollower = lazy(() => import("./components/AlonsoFollower"));
 
+// QueryClient con configuración optimizada para performance
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutos de datos "frescos"
-      gcTime: 1000 * 60 * 30, // 30 minutos en caché
+      staleTime: 1000 * 60 * 10, // 10 minutos de datos "frescos" (aumentado)
+      gcTime: 1000 * 60 * 60, // 1 hora en caché (aumentado)
       refetchOnWindowFocus: false, // No refetch al volver a la ventana
+      refetchOnReconnect: false, // No refetch al reconectar
       retry: 1, // Solo 1 reintento
+      retryDelay: 1000, // 1 segundo entre reintentos
     },
   },
 });
@@ -58,109 +82,100 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <UTNFollower />
+        {/* AlonsoFollower cargado lazy para no bloquear First Paint */}
+        <Suspense fallback={null}>
+          <AlonsoFollower />
+        </Suspense>
         <BrowserRouter>
-          <Routes>
-            {/* Rutas públicas */}
-            <Route path="/" element={<Index />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/profesores" element={<Profesores />} />
-            <Route path="/privacy" element={<Privacy />} />
-            <Route path="/terms" element={<Terms />} />
+          <Suspense fallback={<ContentSkeleton />}>
+            <Routes>
+              {/* Rutas públicas */}
+              <Route path="/" element={<Index />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/profesores" element={<Profesores />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/terms" element={<Terms />} />
 
-            {/* Rutas protegidas (usuarios autenticados) */}
-            <Route
-              path="/perfil"
-              element={
-                <ProtectedRoute>
-                  <Perfil />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/subir"
-              element={
-                <ProtectedRoute>
-                  <Subir />
-                </ProtectedRoute>
-              }
-            />
+              {/* Rutas protegidas (usuarios autenticados) */}
+              <Route
+                path="/perfil"
+                element={
+                  <ProtectedRoute>
+                    <Perfil />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/subir"
+                element={
+                  <ProtectedRoute>
+                    <Subir />
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* Rutas admin (solo admins) - con Suspense para lazy loading */}
-            <Route
-              path="/admin"
-              element={
-                <AdminRoute>
-                  <Suspense fallback={<PageLoader />}>
+              {/* Rutas admin (solo admins) */}
+              <Route
+                path="/admin"
+                element={
+                  <AdminRoute>
                     <AdminDashboard />
-                  </Suspense>
-                </AdminRoute>
-              }
-            />
-            <Route
-              path="/admin/archivos"
-              element={
-                <AdminRoute>
-                  <Suspense fallback={<PageLoader />}>
+                  </AdminRoute>
+                }
+              />
+              <Route
+                path="/admin/archivos"
+                element={
+                  <AdminRoute>
                     <AdminArchivos />
-                  </Suspense>
-                </AdminRoute>
-              }
-            />
-            <Route
-              path="/admin/archivos-reportados"
-              element={
-                <AdminRoute>
-                  <Suspense fallback={<PageLoader />}>
+                  </AdminRoute>
+                }
+              />
+              <Route
+                path="/admin/archivos-reportados"
+                element={
+                  <AdminRoute>
                     <ArchivosReportados />
-                  </Suspense>
-                </AdminRoute>
-              }
-            />
-            <Route
-              path="/admin/profesores"
-              element={
-                <AdminRoute>
-                  <Suspense fallback={<PageLoader />}>
+                  </AdminRoute>
+                }
+              />
+              <Route
+                path="/admin/profesores"
+                element={
+                  <AdminRoute>
                     <AdminProfesores />
-                  </Suspense>
-                </AdminRoute>
-              }
-            />
-            <Route
-              path="/admin/materias"
-              element={
-                <AdminRoute>
-                  <Suspense fallback={<PageLoader />}>
+                  </AdminRoute>
+                }
+              />
+              <Route
+                path="/admin/materias"
+                element={
+                  <AdminRoute>
                     <AdminMaterias />
-                  </Suspense>
-                </AdminRoute>
-              }
-            />
-            <Route
-              path="/admin/comisiones"
-              element={
-                <AdminRoute>
-                  <Suspense fallback={<PageLoader />}>
+                  </AdminRoute>
+                }
+              />
+              <Route
+                path="/admin/comisiones"
+                element={
+                  <AdminRoute>
                     <AdminComisiones />
-                  </Suspense>
-                </AdminRoute>
-              }
-            />
-            <Route
-              path="/admin/asignaciones"
-              element={
-                <AdminRoute>
-                  <Suspense fallback={<PageLoader />}>
+                  </AdminRoute>
+                }
+              />
+              <Route
+                path="/admin/asignaciones"
+                element={
+                  <AdminRoute>
                     <AdminAsignaciones />
-                  </Suspense>
-                </AdminRoute>
-              }
-            />
+                  </AdminRoute>
+                }
+              />
 
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
         </BrowserRouter>
       </TooltipProvider>
     </AuthProvider>

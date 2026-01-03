@@ -10,7 +10,7 @@ export const STORAGE_KEYS = {
   USER_EMAIL: "userEmail",
   USER_FILE_POINTS: "userFilePoints",
   USER_DONATION_POINTS: "userDonationPoints",
-  UTN_FOLLOWER: "utnFollower",
+  ALONSO_FOLLOWER: "alonsoFollower",
 } as const;
 
 export interface UserData {
@@ -75,12 +75,12 @@ export const storage = {
     localStorage.removeItem(STORAGE_KEYS.USER_DONATION_POINTS);
   },
 
-  // UTN Follower
-  getUTNFollowerEnabled: (): boolean => {
-    return localStorage.getItem(STORAGE_KEYS.UTN_FOLLOWER) === "on";
+  // Alonso Follower
+  getAlonsoFollowerEnabled: (): boolean => {
+    return localStorage.getItem(STORAGE_KEYS.ALONSO_FOLLOWER) === "on";
   },
 
-  setUTNFollowerEnabled: (enabled: boolean): void => {
-    localStorage.setItem(STORAGE_KEYS.UTN_FOLLOWER, enabled ? "on" : "off");
+  setAlonsoFollowerEnabled: (enabled: boolean): void => {
+    localStorage.setItem(STORAGE_KEYS.ALONSO_FOLLOWER, enabled ? "on" : "off");
   },
 };

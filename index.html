@@ -3,16 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>
-      247 - Archivos UTN | Parciales, Finales, Resúmenes Ing. en Sistemas
-    </title>
+    <title>247 - Archivos Académicos | La Base de Datos Colaborativa</title>
     <meta
       name="description"
-      content="Banco de archivos colaborativo para estudiantes de Ingeniería en Sistemas de la UTN. Descargá parciales, finales, resúmenes, TPs y guías de estudio gratis. Compartí tus apuntes y ayudá a la comunidad."
+      content="Banco de archivos colaborativo para estudiantes. Descargá parciales, finales, resúmenes, TPs y guías de estudio gratis. Compartí tus apuntes y ayudá a la comunidad."
     />
     <meta
       name="keywords"
-      content="UTN, ingeniería en sistemas, parciales, finales, resúmenes, apuntes, TPs, guías, universidad, archivos, estudiantes, análisis matemático, física, álgebra, sintaxis, paradigmas, base de datos, FRBA, Buenos Aires, exámenes, material de estudio"
+      content="parciales, finales, resúmenes, apuntes, TPs, guías, universidad, archivos, estudiantes, análisis matemático, física, álgebra, sintaxis, paradigmas, base de datos, Buenos Aires, exámenes, material de estudio"
     />
     <meta name="author" content="247" />
     <meta name="robots" content="index, follow" />
@@ -31,21 +29,118 @@
       name="apple-mobile-web-app-status-bar-style"
       content="black-translucent"
     />
-    <meta name="apple-mobile-web-app-title" content="247 UTN" />
-    <meta name="application-name" content="247 - Archivos UTN" />
+    <meta name="apple-mobile-web-app-title" content="247" />
+    <meta name="application-name" content="247 - Archivos" />
     <meta name="format-detection" content="telephone=no" />
     <link rel="canonical" href="https://247.com.ar" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <!-- Favicon con preload -->
+    <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+    <!-- CRITICAL: Preconnect a dominios externos (antes que cualquier otro recurso) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="preconnect"
+      href="https://nesbqbdqeieyjuvkhwhf.supabase.co"
+      crossorigin
+    />
+    <link rel="dns-prefetch" href="https://nesbqbdqeieyjuvkhwhf.supabase.co" />
+    <link rel="dns-prefetch" href="https://apis.google.com" />
+    <link rel="dns-prefetch" href="https://accounts.google.com" />
+
+    <!-- CRITICAL CSS inline para First Contentful Paint instantáneo -->
+    <style>
+      /* Critical CSS - Above the fold styles */
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html {
+        -webkit-text-size-adjust: 100%;
+        font-feature-settings: normal;
+        font-family:
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          Roboto,
+          "Helvetica Neue",
+          Arial,
+          sans-serif;
+        line-height: 1.5;
+        -moz-tab-size: 4;
+        tab-size: 4;
+      }
+      body {
+        background-color: hsl(0 0% 4%);
+        color: hsl(72 100% 55%);
+        min-height: 100vh;
+        line-height: inherit;
+      }
+      #root {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+      /* Loading spinner */
+      .initial-loader {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        background: hsl(0 0% 4%);
+      }
+      .initial-loader-spinner {
+        width: 48px;
+        height: 48px;
+        border: 4px solid hsl(72 100% 55% / 0.3);
+        border-top-color: hsl(72 100% 55%);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      /* Hide loader when app mounts */
+      #root:not(:empty) + .initial-loader,
+      #root:not(:empty) .initial-loader {
+        display: none;
+      }
+    </style>
+
+    <!-- Fuentes con display=swap y preload de la crítica -->
+    <link
+      rel="preload"
+      href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+      as="style"
+      onload="
+        this.onload = null;
+        this.rel = 'stylesheet';
+      "
+    />
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
 
     <!-- Open Graph / Facebook -->
     <meta
       property="og:title"
-      content="247 - Archivos UTN | La Base de Datos No Oficial"
+      content="247 - Archivos Académicos | La Base de Datos Colaborativa"
     />
     <meta
       property="og:description"
-      content="Banco de archivos colaborativo para Ing. en Sistemas UTN. Parciales, finales, resúmenes y más."
+      content="Banco de archivos colaborativo para estudiantes. Parciales, finales, resúmenes y más."
     />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://247.com.ar" />
@@ -59,24 +154,24 @@
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@247" />
-    <meta name="twitter:title" content="247 - Archivos UTN" />
+    <meta name="twitter:title" content="247 - Archivos Académicos" />
     <meta
       name="twitter:description"
-      content="Parciales, finales y resúmenes para Ing. en Sistemas UTN"
+      content="Parciales, finales y resúmenes para estudiantes"
     />
     <meta
       name="twitter:image"
       content="https://lovable.dev/opengraph-image-p98pqg.png"
     />
 
-    <!-- Structured Data - WebSite -->
+    <!-- Structured Data (minificado) -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
         "@type": "WebSite",
-        "name": "247 - Archivos UTN",
-        "alternateName": "247 UTN",
-        "description": "Banco de archivos colaborativo para estudiantes de Ingeniería en Sistemas de la UTN",
+        "name": "247 - Archivos Académicos",
+        "alternateName": "247",
+        "description": "Banco de archivos colaborativo para estudiantes",
         "url": "https://247.com.ar",
         "inLanguage": "es-AR",
         "potentialAction": {
@@ -89,40 +184,31 @@
         }
       }
     </script>
-
-    <!-- Structured Data - Organization -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
         "@type": "EducationalOrganization",
         "name": "247",
         "url": "https://247.com.ar",
-        "description": "Plataforma colaborativa de archivos académicos para estudiantes de UTN",
-        "areaServed": {
-          "@type": "Country",
-          "name": "Argentina"
-        },
+        "description": "Plataforma colaborativa de archivos académicos para estudiantes",
+        "areaServed": { "@type": "Country", "name": "Argentina" },
         "audience": {
           "@type": "EducationalAudience",
           "educationalRole": "student"
         }
       }
     </script>
-
-    <!-- Preconnect for performance -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="preconnect" href="https://nesbqbdqeieyjuvkhwhf.supabase.co" />
-
-    <!-- Fonts with display swap for faster rendering -->
-    <link
-      href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
   </head>
 
   <body>
-    <div id="root"></div>
+    <!-- Loading screen inicial mientras carga React -->
+    <div id="root">
+      <div class="initial-loader">
+        <div class="initial-loader-spinner"></div>
+      </div>
+    </div>
+
+    <!-- App script con modulepreload para mejor performance -->
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

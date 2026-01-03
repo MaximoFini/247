@@ -9,7 +9,7 @@ import {
   Flag,
   Loader2,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, memo, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { FileItem } from "@/data/mockData";
 import { supabase } from "@/lib/supabase/client";
@@ -19,52 +19,44 @@ interface FileCardProps {
   file: FileItem & { link?: string; id?: string };
 }
 
-const getFileIcon = (fileType: FileItem["fileType"]) => {
-  switch (fileType) {
-    case "pdf":
-    case "doc":
-      return FileText;
-    case "zip":
-      return FileArchive;
-    case "img":
-      return FileImage;
-    case "xls":
-      return FileSpreadsheet;
-    case "ppt":
-      return Presentation;
-    default:
-      return File;
-  }
-};
+// Mapeos estáticos fuera del componente para evitar recrearlos
+const FILE_ICONS = {
+  pdf: FileText,
+  doc: FileText,
+  zip: FileArchive,
+  img: FileImage,
+  xls: FileSpreadsheet,
+  ppt: Presentation,
+} as const;
 
-const getFileTypeColor = (fileType: FileItem["fileType"]) => {
-  switch (fileType) {
-    case "pdf":
-      return "text-red-500 border-red-500";
-    case "doc":
-      return "text-blue-500 border-blue-500";
-    case "zip":
-      return "text-yellow-500 border-yellow-500";
-    case "img":
-      return "text-purple-500 border-purple-500";
-    case "xls":
-      return "text-green-500 border-green-500";
-    case "ppt":
-      return "text-orange-500 border-orange-500";
-    default:
-      return "text-muted-foreground border-muted-foreground";
-  }
-};
+const FILE_COLORS = {
+  pdf: "text-red-500 border-red-500",
+  doc: "text-blue-500 border-blue-500",
+  zip: "text-yellow-500 border-yellow-500",
+  img: "text-purple-500 border-purple-500",
+  xls: "text-green-500 border-green-500",
+  ppt: "text-orange-500 border-orange-500",
+} as const;
 
-const FileCard = ({ file }: FileCardProps) => {
-  const FileIcon = getFileIcon(file.fileType);
-  const typeColor = getFileTypeColor(file.fileType);
+const getFileIcon = (fileType: FileItem["fileType"]) =>
+  FILE_ICONS[fileType as keyof typeof FILE_ICONS] || File;
+
+const getFileTypeColor = (fileType: FileItem["fileType"]) =>
+  FILE_COLORS[fileType as keyof typeof FILE_COLORS] ||
+  "text-muted-foreground border-muted-foreground";
+
+const FileCard = memo(({ file }: FileCardProps) => {
+  const FileIcon = useMemo(() => getFileIcon(file.fileType), [file.fileType]);
+  const typeColor = useMemo(
+    () => getFileTypeColor(file.fileType),
+    [file.fileType]
+  );
   const { reportFile, isAuthenticated } = useReportFile();
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportMotivo, setReportMotivo] = useState("");
   const [isReporting, setIsReporting] = useState(false);
 
-  const handleDownload = async () => {
+  const handleDownload = useCallback(async () => {
     if (file.link) {
       // Abrir el archivo en nueva pestaña
       window.open(file.link, "_blank");
@@ -100,7 +92,32 @@ const FileCard = ({ file }: FileCardProps) => {
     } else {
       alert("Link de descarga no disponible");
     }
-  };
+  }, [file.link, file.id]);
+
+  const openReportModal = useCallback(() => setShowReportModal(true), []);
+  const closeReportModal = useCallback(() => {
+    setShowReportModal(false);
+    setReportMotivo("");
+  }, []);
+
+  const handleBackdropClick = useCallback(
+    (e: React.MouseEvent) => {
+      if (e.target === e.currentTarget) {
+        closeReportModal();
+      }
+    },
+    [closeReportModal]
+  );
+
+  const handleReport = useCallback(async () => {
+    if (!reportMotivo || !file.id) return;
+    setIsReporting(true);
+    const success = await reportFile(file.id, reportMotivo);
+    setIsReporting(false);
+    if (success) {
+      closeReportModal();
+    }
+  }, [reportMotivo, file.id, reportFile, closeReportModal]);
 
   return (
     <div className="group relative border-2 border-primary bg-card transition-all hover:translate-x-1 hover:-translate-y-1 hover:shadow-[6px_6px_0_hsl(var(--primary))]">
@@ -150,7 +167,7 @@ const FileCard = ({ file }: FileCardProps) => {
 
           {/* Report Button */}
           <button
-            onClick={() => setShowReportModal(true)}
+            onClick={openReportModal}
             className="flex items-center justify-center border-2 border-destructive bg-transparent px-3 py-3 text-destructive transition-all hover:bg-destructive hover:text-destructive-foreground"
             title="Reportar archivo"
           >
@@ -164,13 +181,7 @@ const FileCard = ({ file }: FileCardProps) => {
         createPortal(
           <div
             className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50"
-            onClick={(e) => {
-              // Cerrar al hacer click fuera del modal
-              if (e.target === e.currentTarget) {
-                setShowReportModal(false);
-                setReportMotivo("");
-              }
-            }}
+            onClick={handleBackdropClick}
           >
             <div
               className="border-2 border-primary bg-background p-6 max-w-md w-full mx-4"
@@ -189,7 +200,7 @@ const FileCard = ({ file }: FileCardProps) => {
                     Debes iniciar sesión para reportar archivos
                   </p>
                   <button
-                    onClick={() => setShowReportModal(false)}
+                    onClick={closeReportModal}
                     className="border-2 border-primary bg-transparent px-4 py-2 font-mono text-sm uppercase text-primary hover:bg-primary hover:text-primary-foreground"
                   >
                     CERRAR
@@ -225,28 +236,13 @@ const FileCard = ({ file }: FileCardProps) => {
 
                   <div className="flex gap-2">
                     <button
-                      onClick={() => {
-                        setShowReportModal(false);
-                        setReportMotivo("");
-                      }}
+                      onClick={closeReportModal}
                       className="flex-1 border-2 border-muted-foreground bg-transparent px-4 py-2 font-mono text-sm uppercase text-muted-foreground hover:bg-muted-foreground hover:text-background"
                     >
                       CANCELAR
                     </button>
                     <button
-                      onClick={async () => {
-                        if (!reportMotivo) return;
-                        setIsReporting(true);
-                        const success = await reportFile(
-                          file.id!,
-                          reportMotivo
-                        );
-                        setIsReporting(false);
-                        if (success) {
-                          setShowReportModal(false);
-                          setReportMotivo("");
-                        }
-                      }}
+                      onClick={handleReport}
                       disabled={!reportMotivo || isReporting}
                       className="flex-1 flex items-center justify-center gap-2 border-2 border-destructive bg-destructive px-4 py-2 font-mono text-sm uppercase text-destructive-foreground hover:bg-transparent hover:text-destructive disabled:opacity-50 disabled:cursor-not-allowed"
                     >
@@ -268,6 +264,8 @@ const FileCard = ({ file }: FileCardProps) => {
         )}
     </div>
   );
-};
+});
+
+FileCard.displayName = "FileCard";
 
 export default FileCard;

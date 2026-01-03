@@ -35,7 +35,7 @@ const Terms = () => {
               <p>
                 247 es una plataforma colaborativa para compartir archivos
                 académicos (apuntes, parciales, trabajos prácticos, etc.) entre
-                estudiantes de Ingeniería en Sistemas de la UTN FRC.
+                estudiantes.
               </p>
             </section>
 

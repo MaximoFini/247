@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { storage } from "@/lib/storage";
 
-const UTNFollower = () => {
+const AlonsoFollower = () => {
   const [position, setPosition] = useState({ x: -100, y: -100 });
   const [targetPosition, setTargetPosition] = useState({ x: 0, y: 0 });
   const [started, setStarted] = useState(false);
-  const [enabled, setEnabled] = useState(() => storage.getUTNFollowerEnabled());
+  const [enabled, setEnabled] = useState(() =>
+    storage.getAlonsoFollowerEnabled()
+  );
   const [imgLoaded, setImgLoaded] = useState(false);
 
   // Try to preload image from public root '/manteca.png'
@@ -52,7 +54,7 @@ const UTNFollower = () => {
   const toggleEnabled = () => {
     const next = !enabled;
     setEnabled(next);
-    storage.setUTNFollowerEnabled(next);
+    storage.setAlonsoFollowerEnabled(next);
   };
 
   if (!enabled) {
@@ -81,7 +83,7 @@ const UTNFollower = () => {
         {imgLoaded ? (
           <img
             src="/manteca.png"
-            alt="UTN"
+            alt="247"
             width={40}
             height={40}
             className="drop-shadow-lg opacity-90 select-none"
@@ -98,27 +100,17 @@ const UTNFollower = () => {
             viewBox="0 0 100 100"
             className="drop-shadow-lg opacity-70"
           >
-            <rect x="10" y="10" width="80" height="80" fill="#003DA5" rx="5" />
+            <rect x="10" y="10" width="80" height="80" fill="#22c55e" rx="5" />
             <text
               x="50"
-              y="45"
-              fontSize="24"
+              y="60"
+              fontSize="32"
               fontWeight="bold"
               fill="white"
               textAnchor="middle"
               fontFamily="Arial, sans-serif"
             >
-              UTN
-            </text>
-            <text
-              x="40"
-              y="60"
-              fontSize="11"
-              fill="white"
-              textAnchor="middle"
-              fontFamily="Arial, sans-serif"
-            >
-              FRA
+              247
             </text>
           </svg>
         )}
@@ -134,4 +126,4 @@ const UTNFollower = () => {
   );
 };
 
-export default UTNFollower;
+export default AlonsoFollower;

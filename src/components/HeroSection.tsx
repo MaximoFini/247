@@ -1,62 +1,102 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo, useRef } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase/client";
 
-const HeroSection = () => {
-  const [stats, setStats] = useState({
-    archivos: 0,
-    materias: 0,
-    descargas: 0,
+// Constantes
+const OBJETIVO_ARCHIVOS = 500;
+const STATS_CACHE_TIME = 1000 * 60 * 15; // 15 minutos de cache
+
+// Tipo para stats
+interface HeroStats {
+  archivos: number;
+  materias: number;
+  descargas: number;
+}
+
+// Función de fetch optimizada (usa una sola query para descargas)
+async function fetchHeroStats(): Promise<HeroStats> {
+  const [archivosResult, materiasResult, descargasResult] = await Promise.all([
+    // Contar archivos activos (solo count, sin datos)
+    supabase
+      .from("archivos")
+      .select("id", { count: "exact", head: true })
+      .eq("activo", true),
+    // Contar materias (solo count, sin datos)
+    supabase.from("materias").select("id", { count: "exact", head: true }),
+    // Solo traer descargas para sumar (campo mínimo)
+    supabase.from("archivos").select("descargas").eq("activo", true),
+  ]);
+
+  const totalDescargas =
+    descargasResult.data?.reduce(
+      (sum, file) => sum + (file.descargas || 0),
+      0
+    ) || 0;
+
+  return {
+    archivos: archivosResult.count || 0,
+    materias: materiasResult.count || 0,
+    descargas: totalDescargas,
+  };
+}
+
+// Hook para stats con cache agresivo
+function useHeroStats() {
+  return useQuery({
+    queryKey: ["hero-stats"],
+    queryFn: fetchHeroStats,
+    staleTime: STATS_CACHE_TIME,
+    gcTime: STATS_CACHE_TIME * 2,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
-  const [loading, setLoading] = useState(true);
+}
 
-  const OBJETIVO_ARCHIVOS = 500;
+// Componente de estadística individual (memoizado)
+const StatItem = memo(
+  ({
+    value,
+    label,
+    loading,
+  }: {
+    value: number | string;
+    label: string;
+    loading: boolean;
+  }) => (
+    <div className="text-center">
+      <p className="font-brutal text-4xl text-primary">
+        {loading
+          ? "..."
+          : typeof value === "number"
+            ? value.toLocaleString("es-AR")
+            : value}
+      </p>
+      <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
+        {label}
+      </p>
+    </div>
+  )
+);
+StatItem.displayName = "StatItem";
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        // Ejecutar todas las queries en paralelo para mayor velocidad
-        const [archivosResult, materiasResult, descargasResult] =
-          await Promise.all([
-            // Contar archivos activos
-            supabase
-              .from("archivos")
-              .select("*", { count: "exact", head: true })
-              .eq("activo", true),
-            // Contar materias
-            supabase
-              .from("materias")
-              .select("*", { count: "exact", head: true }),
-            // Sumar total de descargas (solo el campo necesario)
-            supabase.from("archivos").select("descargas").eq("activo", true),
-          ]);
+// Componente principal memoizado
+const HeroSection = memo(() => {
+  const { data: stats, isLoading: loading } = useHeroStats();
 
-        const totalDescargas =
-          descargasResult.data?.reduce(
-            (sum, file) => sum + (file.descargas || 0),
-            0
-          ) || 0;
+  // Valores por defecto mientras carga
+  const archivos = stats?.archivos ?? 0;
+  const materias = stats?.materias ?? 0;
+  const descargas = stats?.descargas ?? 0;
 
-        setStats({
-          archivos: archivosResult.count || 0,
-          materias: materiasResult.count || 0,
-          descargas: totalDescargas,
-        });
-      } catch (error) {
-        console.error("Error al cargar estadísticas:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchStats();
-  }, []);
-
-  const progreso = Math.min((stats.archivos / OBJETIVO_ARCHIVOS) * 100, 100);
+  const progreso = Math.min((archivos / OBJETIVO_ARCHIVOS) * 100, 100);
 
   return (
     <section className="relative overflow-hidden py-20">
-      {/* Decorative grid lines */}
-      <div className="absolute inset-0 opacity-10">
+      {/* Decorative grid lines - optimizado con will-change */}
+      <div
+        className="absolute inset-0 opacity-10"
+        style={{ willChange: "auto" }}
+      >
         <div
           className="h-full w-full"
           style={{
@@ -69,11 +109,11 @@ const HeroSection = () => {
         />
       </div>
 
-      {/* Glitch decoration */}
-      <div className="absolute -left-20 top-1/2 -translate-y-1/2 rotate-90 font-brutal text-9xl text-primary/5">
+      {/* Glitch decoration - hidden on mobile for performance */}
+      <div className="absolute -left-20 top-1/2 -translate-y-1/2 rotate-90 font-brutal text-9xl text-primary/5 hidden md:block">
         247
       </div>
-      <div className="absolute -right-20 top-1/2 -translate-y-1/2 -rotate-90 font-brutal text-9xl text-primary/5">
+      <div className="absolute -right-20 top-1/2 -translate-y-1/2 -rotate-90 font-brutal text-9xl text-primary/5 hidden md:block">
         247
       </div>
 
@@ -95,39 +135,18 @@ const HeroSection = () => {
         {/* Stats */}
         <div className="mt-12 border-t-2 border-primary/30">
           <div className="flex flex-wrap items-center justify-center gap-8 py-6">
-            <div className="text-center">
-              <p className="font-brutal text-4xl text-primary">
-                {loading ? "..." : stats.archivos.toLocaleString()}
-              </p>
-              <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
-                ARCHIVOS
-              </p>
-            </div>
+            <StatItem value={archivos} label="ARCHIVOS" loading={loading} />
             <div className="h-12 w-0.5 bg-primary/30" />
-            <div className="text-center">
-              <p className="font-brutal text-4xl text-primary">
-                {loading ? "..." : stats.materias}
-              </p>
-              <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
-                MATERIAS
-              </p>
-            </div>
+            <StatItem value={materias} label="MATERIAS" loading={loading} />
             <div className="h-12 w-0.5 bg-primary/30" />
-            <div className="text-center">
-              <p className="font-brutal text-3xl text-primary">
-                {loading ? "..." : stats.descargas.toLocaleString()}
-              </p>
-              <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
-                DESCARGAS
-              </p>
-            </div>
+            <StatItem value={descargas} label="DESCARGAS" loading={loading} />
           </div>
 
           {/* Barra de progreso hacia el objetivo */}
           <div className="flex flex-col gap-2 px-4 pb-4">
             <div className="flex items-center gap-4">
               <span className="font-mono text-xs text-muted-foreground whitespace-nowrap">
-                {stats.archivos}/{OBJETIVO_ARCHIVOS}
+                {archivos}/{OBJETIVO_ARCHIVOS}
               </span>
               <div className="flex-1 h-2 bg-primary/20 border border-primary/30">
                 <div
@@ -147,6 +166,8 @@ const HeroSection = () => {
       </div>
     </section>
   );
-};
+});
+
+HeroSection.displayName = "HeroSection";
 
 export default HeroSection;
