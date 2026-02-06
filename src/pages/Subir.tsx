@@ -22,7 +22,7 @@ const TIPO_ARCHIVO_OPTIONS: {
 ];
 
 const SubirPage = () => {
-  const { user, dbUser } = useAuth();
+  const { user, dbUser, loading: authLoading } = useAuth();
   const { openPicker, uploading, error } = useDriveUpload();
 
   const [materiaId, setMateriaId] = useState("");
@@ -30,9 +30,9 @@ const SubirPage = () => {
   const [tipo, setTipo] = useState<TipoArchivo | "">("");
   const [success, setSuccess] = useState(false);
 
-  // React Query para caché automático y carga instantánea
+  // ⚡ FASE 2: React Query con sincronización de auth
   const { data: materias = [], isLoading: loadingMaterias } = useQuery({
-    queryKey: ["materias"],
+    queryKey: ["materias", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("materias")
@@ -41,12 +41,14 @@ const SubirPage = () => {
       if (error) throw error;
       return data as Materia[];
     },
+    enabled: !authLoading, // ⚡ Solo cuando auth termine
     staleTime: 1000 * 60 * 30, // 30 minutos - datos estables
     gcTime: 1000 * 60 * 60, // 1 hora en caché
+    retry: 2,
   });
 
   const { data: comisiones = [], isLoading: loadingComisiones } = useQuery({
-    queryKey: ["comisiones"],
+    queryKey: ["comisiones", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("comisiones")
@@ -55,8 +57,10 @@ const SubirPage = () => {
       if (error) throw error;
       return data as Comision[];
     },
+    enabled: !authLoading, // ⚡ Solo cuando auth termine
     staleTime: 1000 * 60 * 30, // 30 minutos - datos estables
     gcTime: 1000 * 60 * 60, // 1 hora en caché
+    retry: 2,
   });
 
   const loading = loadingMaterias || loadingComisiones;

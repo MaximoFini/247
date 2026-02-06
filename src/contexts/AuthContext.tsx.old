@@ -14,8 +14,7 @@ interface AuthContextType {
   user: User | null;
   dbUser: DBUser | null;
   session: Session | null;
-  loading: boolean; // authReady: true cuando la sesión está determinada
-  dbUserLoading: boolean; // true mientras se carga el perfil de DB
+  loading: boolean;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   isAdmin: boolean;
@@ -27,10 +26,10 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const DBUSER_STORAGE_KEY = "dbUser";
 const AUTH_STORAGE_KEYS = ["dbUser", "sb-nesbqbdqeieyjuvkhwhf-auth-token"];
 
-// ⚡ OPTIMIZACIÓN FASE 2: Timeouts
-const AUTH_TIMEOUT_MS = 3000; // 3s para getSession
-const DBUSER_FETCH_TIMEOUT_MS = 10000; // 10s para fetch de dbUser con AbortController
-const LOADING_SAFETY_TIMEOUT_MS = 5000; // 5s máximo de auth loading
+// ⚡ OPTIMIZACIÓN FASE 1: Timeouts reducidos
+const AUTH_TIMEOUT_MS = 3000; // Reducido de 8s a 3s
+const DBUSER_FETCH_TIMEOUT_MS = 4000; // 4s para fetch de dbUser
+const LOADING_SAFETY_TIMEOUT_MS = 5000; // 5s máximo de loading (reducido de 10s)
 
 // Helper para limpiar todo el storage relacionado con auth
 function clearAllAuthStorage() {
@@ -75,15 +74,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   });
   const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true); // authReady: session determinada
-  const [dbUserLoading, setDbUserLoading] = useState(false); // perfil de DB cargando
+  const [loading, setLoading] = useState(true);
 
   const dbUserRef = useRef<DBUser | null>(dbUser);
   const fetchingRef = useRef<boolean>(false);
   const initializedRef = useRef<boolean>(false);
   const loadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  // ⚡ OPTIMIZACIÓN FASE 2: Track si ya se procesó la sesión inicial
+  
+  // ⚡ OPTIMIZACIÓN FASE 1: Track si ya se procesó la sesión inicial
   const initialSessionProcessedRef = useRef<boolean>(false);
 
   // ⚠️ FALLBACK DE SEGURIDAD: Forzar loading=false después de 5s máximo
@@ -92,7 +90,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       loadingTimeoutRef.current = setTimeout(() => {
         console.warn("⚠️ Loading timeout (5s) - forzando loading=false");
         setLoading(false);
-      }, LOADING_SAFETY_TIMEOUT_MS);
+      }, LOADING_SAFETY_TIMEOUT_MS); // ⚡ Reducido de 10s a 5s
     } else {
       if (loadingTimeoutRef.current) {
         clearTimeout(loadingTimeoutRef.current);
@@ -132,39 +130,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       const currentDbUser = dbUserRef.current;
-
+      
       // Si ya tenemos el usuario y no es force refresh, usar caché
       if (!forceRefresh && currentDbUser && currentDbUser.id === userId) {
         console.log("✅ dbUser cacheado:", currentDbUser.email);
-        // NO bloquear loading, solo retornar
+        setLoading(false);
         return;
       }
 
       fetchingRef.current = true;
-      setDbUserLoading(true);
-      console.log("🔍 fetchDbUser -> start:", userId);
+      console.log("🔍 Fetching dbUser:", userId);
 
       try {
-        // Crear promesa con timeout para evitar que la query quede colgada
-        const queryPromise = supabase
-          .from("users")
-          .select(
-            "id, email, nombre, puntos_archivos, puntos_donaciones, is_admin",
-          )
-          .eq("id", userId)
-          .single();
-
-        const timeoutPromise = new Promise<never>((_, reject) =>
-          setTimeout(
-            () => reject(new Error("fetchDbUser timeout (10s)")),
-            DBUSER_FETCH_TIMEOUT_MS,
-          ),
+        const { data, error } = await withTimeout(
+          supabase
+            .from("users")
+            .select("id, email, nombre, puntos_archivos, puntos_donaciones, is_admin")
+            .eq("id", userId)
+            .single(),
+          DBUSER_FETCH_TIMEOUT_MS,
+          "Timeout fetching dbUser"
         );
-
-        const { data, error } = await Promise.race([
-          queryPromise,
-          timeoutPromise,
-        ]);
 
         if (error) {
           console.warn("⚠️ Error fetchDbUser:", error.message);
@@ -173,45 +159,93 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setDbUser(null);
           }
         } else if (data) {
-          console.log(
-            "✅ fetchDbUser -> end:",
-            data.email,
-            "admin:",
-            data.is_admin,
-          );
-          setDbUser(data as DBUser);
+          console.log("✅ dbUser obtenido:", data.email, "admin:", data.is_admin);
+          setDbUser(data);
         }
-      } catch (error) {
-        console.warn(
-          "⚠️ Error/timeout en fetchDbUser:",
-          error instanceof Error ? error.message : "Unknown error",
-        );
+      } catch (error: any) {
+        console.warn("⚠️ Error/timeout en fetchDbUser:", error?.message);
         // Mantener caché si existe
       } finally {
         fetchingRef.current = false;
-        setDbUserLoading(false);
+        setLoading(false);
       }
     },
     [],
   );
 
-  // ⚡ OPTIMIZACIÓN FASE 2: Efecto principal - NO bloquea loading esperando dbUser
+  // Efecto principal para manejar autenticación
   useEffect(() => {
     if (initializedRef.current) return;
     initializedRef.current = true;
 
-    console.log("🚀 AuthProvider: Inicializando...");
+    console.log(" AuthProvider: Inicializando...");
 
-    let mounted = true;
+    // Obtener sesión inicial CON TIMEOUT para evitar que se cuelgue
+    const initAuth = async () => {
+      try {
+        const {
+          data: { session: initialSession },
+        } = await withTimeout(
+          supabase.auth.getSession(),
+          AUTH_TIMEOUT_MS,
+          "Timeout al obtener sesión",
+        );
 
-    // ⚡ OPTIMIZACIÓN: Setup del listener PRIMERO para capturar eventos inmediatamente
+        console.log(
+          " Sesión inicial:",
+          initialSession?.user?.email || "No hay sesión",
+        );
+
+        // Si hay caché de dbUser pero NO hay sesión válida, limpiar todo (sesión corrupta/expirada)
+        if (!initialSession && dbUserRef.current) {
+          console.log("⚠️ Sesión expirada detectada, limpiando caché...");
+          clearAllAuthStorage();
+          setDbUser(null);
+          setUser(null);
+          setSession(null);
+          setLoading(false);
+          return;
+        }
+
+        setSession(initialSession);
+        setUser(initialSession?.user ?? null);
+
+        if (initialSession?.user) {
+          fetchDbUser(initialSession.user.id);
+        } else {
+          setDbUser(null);
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error("❌ Error al inicializar auth:", error);
+
+        // ⚠️ CRÍTICO: Solo limpiar si onAuthStateChange NO confirmó una sesión
+        // Esto previene race condition donde el timeout borra una sesión válida
+        if (!sessionConfirmedRef.current) {
+          console.log("🧹 No hay sesión confirmada, limpiando estado...");
+          clearAllAuthStorage();
+          setDbUser(null);
+          setUser(null);
+          setSession(null);
+          setLoading(false);
+        } else {
+          console.log(
+            "✅ Sesión ya confirmada por listener, ignorando timeout",
+          );
+          // Solo asegurar que loading sea false
+          setLoading(false);
+        }
+      }
+    };
+
+    initAuth();
+
+    // Escuchar cambios de auth
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, newSession) => {
-      if (!mounted) return;
-
       console.log(
-        "🔄 Auth event:",
+        "🔄 Auth state cambió:",
         event,
         newSession?.user?.email || "No user",
       );
@@ -219,127 +253,80 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(newSession);
       setUser(newSession?.user ?? null);
 
+      // ⚠️ Marcar sesión como confirmada si hay usuario válido
+      if (newSession?.user) {
+        sessionConfirmedRef.current = true;
+      }
+
       switch (event) {
-        case "INITIAL_SESSION":
-          // ⚡ CRÍTICO: Este evento se dispara al cargar con sesión activa
-          initialSessionProcessedRef.current = true;
-
+        case "SIGNED_IN":
           if (newSession?.user) {
-            console.log("✅ INITIAL_SESSION con user:", newSession.user.email);
-            // ⚡ CAMBIO CLAVE: setLoading(false) INMEDIATAMENTE, fetchDbUser en background
-            setLoading(false);
-
-            // Si ya tenemos dbUser cacheado, no hacer nada más
-            if (
-              dbUserRef.current &&
-              dbUserRef.current.id === newSession.user.id
-            ) {
-              console.log("⚡ Usando dbUser cacheado - carga instantánea");
-            } else {
-              // Fetch dbUser en BACKGROUND (no bloqueante)
-              fetchDbUser(newSession.user.id);
-            }
-          } else {
-            console.log("⚠️ INITIAL_SESSION sin user");
-            setDbUser(null);
-            setLoading(false);
+            sessionConfirmedRef.current = true;
+            await fetchDbUser(newSession.user.id, true);
           }
           break;
 
-        case "SIGNED_IN":
-          // En SIGNED_IN (login), sí esperamos dbUser antes de desbloquear
-          setLoading(false);
-          fetchDbUser(newSession!.user.id, true);
-          break;
-
         case "SIGNED_OUT":
+          sessionConfirmedRef.current = false;
           setDbUser(null);
           setLoading(false);
           clearAllAuthStorage();
           break;
 
         case "TOKEN_REFRESHED":
-          console.log("🔄 Token refrescado");
-          setLoading(false);
-          // Refresh dbUser en background si es necesario
+          console.log("🔄 Token refrescado - manteniendo estado de dbUser");
           if (!dbUserRef.current && newSession?.user) {
-            fetchDbUser(newSession.user.id);
+            await fetchDbUser(newSession.user.id);
+          } else {
+            // Asegurar que loading sea false si ya tenemos dbUser
+            setLoading(false);
           }
           break;
 
         case "USER_UPDATED":
-          setLoading(false);
           if (newSession?.user) {
-            fetchDbUser(newSession.user.id, true);
+            await fetchDbUser(newSession.user.id, true);
+          }
+          break;
+
+        case "INITIAL_SESSION":
+          // ⚠️ CRÍTICO: Este evento se dispara al recargar página con sesión activa
+          // Necesitamos asegurar que el estado se actualice correctamente
+          console.log(
+            "🔄 INITIAL_SESSION detectada:",
+            newSession?.user?.email || "No user",
+          );
+          if (newSession?.user) {
+            // Si hay sesión pero no tenemos dbUser, buscarlo
+            if (!dbUserRef.current) {
+              await fetchDbUser(newSession.user.id);
+            } else {
+              // Ya tenemos dbUser cacheado, solo asegurar loading = false
+              setLoading(false);
+            }
+          } else {
+            // No hay sesión, asegurar estado limpio
+            setDbUser(null);
+            setLoading(false);
           }
           break;
 
         default:
-          console.log("🔄 Otro evento:", event);
-          setLoading(false);
+          console.log("� Auth event no manejado:", event);
           if (newSession?.user && !dbUserRef.current) {
-            fetchDbUser(newSession.user.id);
+            await fetchDbUser(newSession.user.id);
+          } else if (newSession?.user && dbUserRef.current) {
+            // Ya tenemos todo, asegurar loading = false
+            setLoading(false);
           } else if (!newSession) {
             setDbUser(null);
+            setLoading(false);
           }
       }
     });
 
-    // ⚡ OPTIMIZACIÓN: getSession solo como fallback si el listener no dispara INITIAL_SESSION
-    const initSession = async () => {
-      try {
-        // Esperar un tick para dar chance al listener
-        await new Promise((resolve) => setTimeout(resolve, 100));
-
-        // Si el listener ya procesó la sesión inicial, no hacer nada
-        if (initialSessionProcessedRef.current) {
-          console.log(
-            "✅ Sesión ya procesada por listener, saltando getSession",
-          );
-          return;
-        }
-
-        console.log("⏳ Listener no disparó - fallback a getSession()");
-
-        const {
-          data: { session: initialSession },
-        } = await withTimeout(
-          supabase.auth.getSession(),
-          AUTH_TIMEOUT_MS,
-          "Timeout getSession",
-        );
-
-        if (!mounted) return;
-
-        console.log(
-          "📦 getSession:",
-          initialSession?.user?.email || "No session",
-        );
-
-        // Si hay sesión pero no hay dbUser, buscar
-        if (initialSession?.user && !dbUserRef.current) {
-          await fetchDbUser(initialSession.user.id);
-        } else if (!initialSession) {
-          // No hay sesión, limpiar
-          setDbUser(null);
-          setLoading(false);
-        } else {
-          // Ya tenemos todo
-          setLoading(false);
-        }
-      } catch (error) {
-        console.warn("⚠️ Error en getSession:", error);
-        // Solo limpiar si NO tenemos nada cacheado
-        if (!dbUserRef.current) {
-          setLoading(false);
-        }
-      }
-    };
-
-    initSession();
-
     return () => {
-      mounted = false;
+      console.log("🧹 AuthProvider: Cleanup");
       subscription.unsubscribe();
     };
   }, [fetchDbUser]);
@@ -374,12 +361,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // 2. Limpiar TODO el storage
     clearAllAuthStorage();
 
-    // 3. Resetear flags
+    // 3. Resetear el flag de inicialización para permitir re-init limpio
     initializedRef.current = false;
     fetchingRef.current = false;
-    initialSessionProcessedRef.current = false;
 
-    // 4. Cerrar sesión en Supabase
+    // 4. Cerrar sesión en Supab
+    sessionConfirmedRef.current = false; // ⚠️ Resetear flag de sesión confirmadaase
     try {
       const { error } = await supabase.auth.signOut({ scope: "local" });
       if (error) {
@@ -389,9 +376,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error("❌ Error en signOut:", e);
     }
 
-    // 5. Forzar recarga limpia
+    // 5. Forzar recarga limpia para asegurar estado completamente fresco
     window.location.href = "/";
   };
+
+  // Log del estado actual (útil para debugging)
+  useEffect(() => {
+    console.log("📊 Estado actual:", {
+      loading,
+      hasUser: !!user,
+      hasDbUser: !!dbUser,
+      email: user?.email,
+    });
+  }, [loading, user, dbUser]);
 
   return (
     <AuthContext.Provider
@@ -400,7 +397,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         dbUser,
         session,
         loading,
-        dbUserLoading,
         signInWithGoogle,
         signOut,
         isAdmin: dbUser?.is_admin ?? false,

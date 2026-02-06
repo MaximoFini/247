@@ -1,6 +1,7 @@
 import { useState, useEffect, memo, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Constantes
 const OBJETIVO_ARCHIVOS = 500;
@@ -30,7 +31,7 @@ async function fetchHeroStats(): Promise<HeroStats> {
   const totalDescargas =
     descargasResult.data?.reduce(
       (sum, file) => sum + (file.descargas || 0),
-      0
+      0,
     ) || 0;
 
   return {
@@ -40,15 +41,21 @@ async function fetchHeroStats(): Promise<HeroStats> {
   };
 }
 
-// Hook para stats con cache agresivo
+// ⚡ FASE 2: Hook para stats con cache agresivo
+// Incluye user.id y enabled para sincronizar con auth
 function useHeroStats() {
+  const { user, loading } = useAuth();
+
   return useQuery({
-    queryKey: ["hero-stats"],
+    queryKey: ["hero-stats", user?.id ?? "anonymous"],
     queryFn: fetchHeroStats,
+    enabled: !loading, // ⚡ Solo ejecutar cuando auth termine
     staleTime: STATS_CACHE_TIME,
     gcTime: STATS_CACHE_TIME * 2,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
+    retry: 2,
+    retryDelay: 1000,
   });
 }
 
@@ -75,7 +82,7 @@ const StatItem = memo(
         {label}
       </p>
     </div>
-  )
+  ),
 );
 StatItem.displayName = "StatItem";
 

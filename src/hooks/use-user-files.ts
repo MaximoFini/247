@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase/client";
 
@@ -18,31 +18,21 @@ export interface UserFile {
   comision_codigo: string;
 }
 
-interface UseUserFilesReturn {
-  files: UserFile[];
-  loading: boolean;
-  error: string | null;
-  refetch: () => Promise<void>;
-}
+/**
+ * ⚡ FASE 2: Hook optimizado con React Query
+ * Se re-ejecuta automáticamente cuando user cambia de null → definido
+ */
+export function useUserFiles() {
+  const { user, loading } = useAuth();
 
-export function useUserFiles(): UseUserFilesReturn {
-  const { user } = useAuth();
-  const [files, setFiles] = useState<UserFile[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  return useQuery({
+    queryKey: ["files", "user", user?.id],
+    queryFn: async () => {
+      if (!user?.id) {
+        throw new Error("No user ID");
+      }
 
-  const fetchFiles = useCallback(async () => {
-    if (!user?.id) {
-      setFiles([]);
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const { data, error: queryError } = await supabase
+      const { data, error } = await supabase
         .from("archivos")
         .select(
           `
@@ -64,14 +54,9 @@ export function useUserFiles(): UseUserFilesReturn {
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
-      if (queryError) {
-        console.error("Error al cargar archivos del usuario:", queryError);
-        setError(queryError.message);
-        setFiles([]);
-        return;
-      }
+      if (error) throw error;
 
-      // Transformar datos para aplanar los JOINs
+      // Transformar datos
       const transformedFiles: UserFile[] = (data || []).map((file: any) => ({
         id: file.id,
         nombre: file.nombre,
@@ -88,25 +73,12 @@ export function useUserFiles(): UseUserFilesReturn {
         comision_codigo: file.comision?.codigo || "Sin comisión",
       }));
 
-      setFiles(transformedFiles);
-    } catch (err) {
-      console.error("Error inesperado:", err);
-      setError("Error al cargar tus archivos");
-      setFiles([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [user?.id]);
-
-  // Cargar archivos cuando el usuario cambia
-  useEffect(() => {
-    fetchFiles();
-  }, [fetchFiles]);
-
-  return {
-    files,
-    loading,
-    error,
-    refetch: fetchFiles,
-  };
+      return transformedFiles;
+    },
+    enabled: !loading && !!user?.id, // ⚡ Solo cuando auth termine Y haya user
+    staleTime: 1000 * 60 * 5, // 5 min
+    gcTime: 1000 * 60 * 30, // 30 min
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 3000),
+  });
 }

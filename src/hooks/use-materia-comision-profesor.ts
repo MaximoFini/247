@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 export interface MateriaComisionProfesor {
   id: string;
@@ -19,17 +20,54 @@ export interface SelectOption {
   codigo?: string;
 }
 
+const FETCH_TIMEOUT_MS = 10000; // 10s timeout
+
 export function useMateriaComisionProfesor() {
+  const { loading: authLoading, user } = useAuth();
+  
   const [relaciones, setRelaciones] = useState<MateriaComisionProfesor[]>([]);
   const [materias, setMaterias] = useState<SelectOption[]>([]);
   const [comisiones, setComisiones] = useState<SelectOption[]>([]);
   const [profesores, setProfesores] = useState<SelectOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const fetchData = useCallback(async () => {
+    // ⚡ PATRÓN OBLIGATORIO: Verificar auth antes de cargar
+    if (authLoading) {
+      console.log("⏳ useMateriaComisionProfesor: esperando auth...");
+      return;
+    }
+    
+    if (!user?.id) {
+      console.log("⚠️ useMateriaComisionProfesor: sin usuario, limpiando data");
+      setRelaciones([]);
+      setMaterias([]);
+      setComisiones([]);
+      setProfesores([]);
+      setLoading(false);
+      return;
+    }
+
+    // Cancelar request anterior si existe
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
+
     setLoading(true);
     setError(null);
+    console.log("🔍 useMateriaComisionProfesor: cargando...");
+
+    // Timeout para las requests
+    const timeoutId = setTimeout(() => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        console.warn("⚠️ useMateriaComisionProfesor timeout (10s) - abortando");
+      }
+    }, FETCH_TIMEOUT_MS);
 
     try {
       // Fetch todas las relaciones con datos relacionados
@@ -46,11 +84,23 @@ export function useMateriaComisionProfesor() {
             comision:comisiones(codigo),
             profesor:profesores(nombre)
           `)
-          .order('created_at', { ascending: false }),
-        supabase.from('materias').select('id, nombre').order('nombre'),
-        supabase.from('comisiones').select('id, codigo').order('codigo'),
-        supabase.from('profesores').select('id, nombre').order('nombre'),
+          .order('created_at', { ascending: false })
+          .abortSignal(abortControllerRef.current.signal),
+        supabase.from('materias').select('id, nombre').order('nombre').abortSignal(abortControllerRef.current.signal),
+        supabase.from('comisiones').select('id, codigo').order('codigo').abortSignal(abortControllerRef.current.signal),
+        supabase.from('profesores').select('id, nombre').order('nombre').abortSignal(abortControllerRef.current.signal),
       ]);
+
+      clearTimeout(timeoutId);
+
+      // Verificar si fue abortado
+      if (relacionesRes.error?.message?.includes('abort') || 
+          materiasRes.error?.message?.includes('abort') ||
+          comisionesRes.error?.message?.includes('abort') ||
+          profesoresRes.error?.message?.includes('abort')) {
+        console.log("⏹️ useMateriaComisionProfesor: requests abortadas");
+        return;
+      }
 
       if (relacionesRes.error) throw relacionesRes.error;
       if (materiasRes.error) throw materiasRes.error;
@@ -73,14 +123,20 @@ export function useMateriaComisionProfesor() {
       setMaterias(materiasRes.data || []);
       setComisiones(comisionesRes.data || []);
       setProfesores(profesoresRes.data || []);
+      console.log("✅ useMateriaComisionProfesor: cargado");
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
+      // Ignorar errores de abort
+      if (err instanceof Error && err.message?.includes('abort')) {
+        return;
+      }
       console.error('Error fetching data:', err);
       setError(err.message);
     } finally {
       setLoading(false);
+      abortControllerRef.current = null;
     }
-  }, []);
+  }, [authLoading, user?.id]);
 
   const createRelacion = async (
     materia_id: string,
@@ -127,8 +183,17 @@ export function useMateriaComisionProfesor() {
   };
 
   useEffect(() => {
+    // ⚡ PATRÓN OBLIGATORIO: esperar que auth esté listo
+    if (authLoading) return;
     fetchData();
-  }, [fetchData]);
+    
+    // Cleanup: abortar requests pendientes al desmontar
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, [authLoading, fetchData]);
 
   return {
     relaciones,

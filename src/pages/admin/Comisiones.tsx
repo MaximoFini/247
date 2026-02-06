@@ -1,36 +1,98 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Users, Plus, Edit, Trash2, Loader2, Save, X } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import { supabase } from "@/lib/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import type { Comision } from "@/types/database";
 
+const FETCH_TIMEOUT_MS = 10000; // 10s timeout
+
 const AdminComisiones = () => {
+  const { loading: authLoading, user } = useAuth();
+
   const [comisiones, setComisiones] = useState<Comision[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [formData, setFormData] = useState({ codigo: "" });
 
-  useEffect(() => {
-    fetchComisiones();
-  }, []);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const fetchComisiones = async () => {
+    // ⚡ PATRÓN OBLIGATORIO: Verificar auth antes de cargar
+    if (authLoading) {
+      console.log("⏳ Comisiones: esperando auth...");
+      return;
+    }
+
+    if (!user?.id) {
+      console.log("⚠️ Comisiones: sin usuario, limpiando data");
+      setComisiones([]);
+      setLoading(false);
+      return;
+    }
+
+    // Cancelar request anterior si existe
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
+
     try {
       setLoading(true);
+      console.log("🔍 Comisiones: cargando...");
+
+      // Timeout para la request
+      const timeoutId = setTimeout(() => {
+        if (abortControllerRef.current) {
+          abortControllerRef.current.abort();
+          console.warn("⚠️ Comisiones timeout (10s) - abortando");
+        }
+      }, FETCH_TIMEOUT_MS);
+
       const { data, error } = await supabase
         .from("comisiones")
         .select("*")
-        .order("codigo");
+        .order("codigo")
+        .abortSignal(abortControllerRef.current.signal);
 
-      if (error) throw error;
+      clearTimeout(timeoutId);
+
+      if (error) {
+        // Ignorar errores de abort
+        if (error.message?.includes("abort")) {
+          console.log("⏹️ Comisiones: request abortada");
+          return;
+        }
+        throw error;
+      }
+
       setComisiones(data || []);
+      console.log("✅ Comisiones: cargadas", data?.length || 0);
     } catch (err) {
+      // Ignorar errores de abort
+      if (err instanceof Error && err.message?.includes("abort")) {
+        return;
+      }
       console.error("Error fetching comisiones:", err);
     } finally {
       setLoading(false);
+      abortControllerRef.current = null;
     }
   };
+
+  useEffect(() => {
+    // ⚡ PATRÓN OBLIGATORIO: esperar que auth esté listo
+    if (authLoading) return;
+    fetchComisiones();
+
+    // Cleanup: abortar requests pendientes al desmontar
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, [authLoading, user?.id]);
 
   const handleCreate = async () => {
     if (!formData.codigo.trim()) return;
@@ -72,7 +134,7 @@ const AdminComisiones = () => {
   const handleDelete = async (id: string) => {
     if (
       !window.confirm(
-        "¿Eliminar esta comisión? Se eliminarán también archivos y relaciones asociadas."
+        "¿Eliminar esta comisión? Se eliminarán también archivos y relaciones asociadas.",
       )
     )
       return;

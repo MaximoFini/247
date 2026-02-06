@@ -1,36 +1,98 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { BookOpen, Plus, Edit, Trash2, Loader2, Save, X } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import { supabase } from "@/lib/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import type { Materia } from "@/types/database";
 
+const FETCH_TIMEOUT_MS = 10000; // 10s timeout
+
 const AdminMaterias = () => {
+  const { loading: authLoading, user } = useAuth();
+
   const [materias, setMaterias] = useState<Materia[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [formData, setFormData] = useState({ nombre: "" });
 
-  useEffect(() => {
-    fetchMaterias();
-  }, []);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const fetchMaterias = async () => {
+    // ⚡ PATRÓN OBLIGATORIO: Verificar auth antes de cargar
+    if (authLoading) {
+      console.log("⏳ Materias: esperando auth...");
+      return;
+    }
+
+    if (!user?.id) {
+      console.log("⚠️ Materias: sin usuario, limpiando data");
+      setMaterias([]);
+      setLoading(false);
+      return;
+    }
+
+    // Cancelar request anterior si existe
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
+
     try {
       setLoading(true);
+      console.log("🔍 Materias: cargando...");
+
+      // Timeout para la request
+      const timeoutId = setTimeout(() => {
+        if (abortControllerRef.current) {
+          abortControllerRef.current.abort();
+          console.warn("⚠️ Materias timeout (10s) - abortando");
+        }
+      }, FETCH_TIMEOUT_MS);
+
       const { data, error } = await supabase
         .from("materias")
         .select("*")
-        .order("nombre");
+        .order("nombre")
+        .abortSignal(abortControllerRef.current.signal);
 
-      if (error) throw error;
+      clearTimeout(timeoutId);
+
+      if (error) {
+        // Ignorar errores de abort
+        if (error.message?.includes("abort")) {
+          console.log("⏹️ Materias: request abortada");
+          return;
+        }
+        throw error;
+      }
+
       setMaterias(data || []);
+      console.log("✅ Materias: cargadas", data?.length || 0);
     } catch (err) {
+      // Ignorar errores de abort
+      if (err instanceof Error && err.message?.includes("abort")) {
+        return;
+      }
       console.error("Error fetching materias:", err);
     } finally {
       setLoading(false);
+      abortControllerRef.current = null;
     }
   };
+
+  useEffect(() => {
+    // ⚡ PATRÓN OBLIGATORIO: esperar que auth esté listo
+    if (authLoading) return;
+    fetchMaterias();
+
+    // Cleanup: abortar requests pendientes al desmontar
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, [authLoading, user?.id]);
 
   const handleCreate = async () => {
     if (!formData.nombre.trim()) return;
@@ -72,7 +134,7 @@ const AdminMaterias = () => {
   const handleDelete = async (id: string) => {
     if (
       !window.confirm(
-        "¿Eliminar esta materia?  Se eliminarán también archivos y relaciones asociadas."
+        "¿Eliminar esta materia?  Se eliminarán también archivos y relaciones asociadas.",
       )
     )
       return;

@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import type { AdminArchivo } from '@/types/admin';
 
 // Configuración de paginación
 const PAGE_SIZE = 30; // Archivos por página
+const FETCH_TIMEOUT_MS = 10000; // 10s timeout para requests
 
 // Campos a seleccionar (optimizado - sin SELECT *)
 const FILE_SELECT_FIELDS = `
@@ -57,6 +59,8 @@ function transformFile(file: any): AdminArchivo {
 }
 
 export function useAdminFiles(): UseAdminFilesReturn {
+  const { loading: authLoading, user } = useAuth();
+  
   const [files, setFiles] = useState<AdminArchivo[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -66,18 +70,50 @@ export function useAdminFiles(): UseAdminFilesReturn {
   
   // Ref para tracking de offset (evita re-renders)
   const offsetRef = useRef(0);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // Cargar primera página
   const fetchFiles = useCallback(async () => {
+    // ⚡ PATRÓN OBLIGATORIO: Verificar auth antes de cargar
+    if (authLoading) {
+      console.log("⏳ useAdminFiles: esperando auth...");
+      return;
+    }
+    
+    if (!user?.id) {
+      console.log("⚠️ useAdminFiles: sin usuario, limpiando data");
+      setFiles([]);
+      setTotalCount(0);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError(null);
     offsetRef.current = 0;
 
+    // Cancelar request anterior si existe
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
+
     try {
+      console.log("🔍 useAdminFiles: cargando archivos...");
+      
+      // Timeout para la request
+      const timeoutId = setTimeout(() => {
+        if (abortControllerRef.current) {
+          abortControllerRef.current.abort();
+          console.warn("⚠️ useAdminFiles timeout (10s) - abortando");
+        }
+      }, FETCH_TIMEOUT_MS);
+
       // Primero obtener el count total (query separada, más eficiente)
       const { count } = await supabase
         .from('archivos')
-        .select('id', { count: 'exact', head: true });
+        .select('id', { count: 'exact', head: true })
+        .abortSignal(abortControllerRef.current.signal);
       
       setTotalCount(count || 0);
 
@@ -86,9 +122,17 @@ export function useAdminFiles(): UseAdminFilesReturn {
         .from('archivos')
         .select(FILE_SELECT_FIELDS)
         .order('created_at', { ascending: false })
-        .range(0, PAGE_SIZE - 1);
+        .range(0, PAGE_SIZE - 1)
+        .abortSignal(abortControllerRef.current.signal);
+
+      clearTimeout(timeoutId);
 
       if (queryError) {
+        // Ignorar errores de abort
+        if (queryError.message?.includes('abort')) {
+          console.log("⏹️ useAdminFiles: request abortada");
+          return;
+        }
         console.error('Error al cargar archivos:', queryError);
         setError(queryError.message);
         setFiles([]);
@@ -99,14 +143,20 @@ export function useAdminFiles(): UseAdminFilesReturn {
       setFiles(transformedFiles);
       setHasMore(transformedFiles.length === PAGE_SIZE);
       offsetRef.current = transformedFiles.length;
+      console.log("✅ useAdminFiles: cargados", transformedFiles.length, "archivos");
     } catch (err) {
+      // Ignorar errores de abort
+      if (err instanceof Error && err.message?.includes('abort')) {
+        return;
+      }
       console.error('Error inesperado:', err);
       setError('Error al cargar archivos');
       setFiles([]);
     } finally {
       setLoading(false);
+      abortControllerRef.current = null;
     }
-  }, []);
+  }, [authLoading, user?.id]);
 
   // Cargar más archivos (infinite scroll)
   const loadMore = useCallback(async () => {
@@ -207,8 +257,17 @@ export function useAdminFiles(): UseAdminFilesReturn {
   };
 
   useEffect(() => {
+    // ⚡ PATRÓN OBLIGATORIO: esperar que auth esté listo
+    if (authLoading) return;
     fetchFiles();
-  }, [fetchFiles]);
+    
+    // Cleanup: abortar requests pendientes al desmontar
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, [authLoading, fetchFiles]);
 
   return {
     files,

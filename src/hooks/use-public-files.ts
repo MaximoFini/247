@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState, useCallback, useRef, useEffect } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { sanitizeSearchInput, INPUT_LIMITS } from "@/lib/validation";
+import { useAuth } from "@/contexts/AuthContext";
 
 export interface PublicFile {
   id: string;
@@ -106,15 +107,21 @@ async function searchFiles(searchTerm: string): Promise<PublicFile[]> {
 /**
  * Hook para carga inicial de TOP 20 archivos
  * Cache agresivo de 10 minutos
+ * ⚡ FASE 2: Incluye user.id en queryKey para refetch cuando cambia auth
  */
 export function usePublicFiles() {
+  const { user, loading } = useAuth();
+
   return useQuery({
-    queryKey: ["public-files-top"],
+    queryKey: ["public-files-top", user?.id ?? "anonymous"],
     queryFn: fetchTopFiles,
-    staleTime: 1000 * 60 * 10, // 10 minutos frescos (aumentado)
+    enabled: !loading, // ⚡ Solo ejecutar cuando auth termine de cargar
+    staleTime: 1000 * 60 * 10, // 10 minutos frescos
     gcTime: 1000 * 60 * 30, // 30 minutos en caché
-    refetchOnMount: false, // No refetch en mount si hay cache
+    refetchOnMount: false,
     refetchOnWindowFocus: false,
+    retry: 2, // ⚡ Reintentar si falla
+    retryDelay: 1000,
   });
 }
 

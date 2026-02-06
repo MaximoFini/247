@@ -18,7 +18,11 @@ import { getRandomApodo } from "@/data/mockData";
 
 const Perfil = () => {
   const { user, dbUser, loading: authLoading } = useAuth();
-  const { files, loading: filesLoading, error: filesError } = useUserFiles();
+  const {
+    data: files = [],
+    isLoading: filesLoading,
+    error: filesError,
+  } = useUserFiles();
 
   // Generar apodo aleatorio una sola vez por sesión
   const apodoAleatorio = useMemo(() => getRandomApodo(), []);
@@ -185,7 +189,7 @@ const Perfil = () => {
                     <p className="font-mono text-3xl text-primary">
                       {files.reduce(
                         (sum, file) => sum + (file.descargas || 0),
-                        0
+                        0,
                       )}
                     </p>
                     <p className="font-mono text-sm uppercase tracking-widest text-muted-foreground">
