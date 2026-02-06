@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState, useCallback, useRef, useEffect } from "react";
 import { supabase } from "@/lib/supabase/client";
+import { sanitizeSearchInput, INPUT_LIMITS } from "@/lib/validation";
 
 export interface PublicFile {
   id: string;
@@ -75,10 +76,16 @@ async function fetchTopFiles(): Promise<PublicFile[]> {
 /**
  * BÚSQUEDA: Buscar por nombre con ILIKE
  * Limitado a 30 resultados para performance
+ * Sanitiza el input para prevenir inyecciones
  */
 async function searchFiles(searchTerm: string): Promise<PublicFile[]> {
-  // Sanitizar término de búsqueda
-  const sanitizedTerm = searchTerm.trim().slice(0, 100); // Limitar longitud
+  // Sanitizar término de búsqueda (escapa %, _, \)
+  const sanitizedTerm = sanitizeSearchInput(searchTerm, INPUT_LIMITS.SEARCH);
+  
+  // Si después de sanitizar queda vacío, retornar vacío
+  if (!sanitizedTerm) {
+    return [];
+  }
   
   const { data, error } = await supabase
     .from("archivos")

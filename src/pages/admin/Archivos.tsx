@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import {
   FileText,
   ExternalLink,
@@ -12,14 +12,46 @@ import {
 import Navigation from "@/components/Navigation";
 import { useAdminFiles } from "@/hooks/use-admin-files";
 import { toast } from "sonner";
+import { INPUT_LIMITS, sanitizeInput } from "@/lib/validation";
+
+const MAX_SEARCH_LENGTH = INPUT_LIMITS.SEARCH;
 
 const AdminArchivos = () => {
-  const { files, loading, error, refetch, deleteFile, toggleActive } =
-    useAdminFiles();
+  const {
+    files,
+    loading,
+    loadingMore,
+    error,
+    hasMore,
+    totalCount,
+    loadMore,
+    refetch,
+    deleteFile,
+    toggleActive,
+  } = useAdminFiles();
   const [actioningId, setActioningId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterTipo, setFilterTipo] = useState<string>("");
   const [filterActivo, setFilterActivo] = useState<string>("");
+
+  // Ref para infinite scroll
+  const observerRef = useRef<IntersectionObserver | null>(null);
+  const loadMoreRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      if (loading || loadingMore) return;
+
+      if (observerRef.current) observerRef.current.disconnect();
+
+      observerRef.current = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting && hasMore && !searchTerm) {
+          loadMore();
+        }
+      });
+
+      if (node) observerRef.current.observe(node);
+    },
+    [loading, loadingMore, hasMore, loadMore, searchTerm]
+  );
 
   const handleDelete = async (id: string, nombre: string) => {
     if (
@@ -93,9 +125,10 @@ const AdminArchivos = () => {
               GESTIÓN DE ARCHIVOS
             </h1>
             <p className="font-mono text-sm text-muted-foreground mt-2">
-              {files.length} archivo{files.length !== 1 ? "s" : ""} en total •{" "}
+              {totalCount} archivo{totalCount !== 1 ? "s" : ""} en total •{" "}
               {filteredFiles.length} mostrado
               {filteredFiles.length !== 1 ? "s" : ""}
+              {hasMore && !searchTerm && " • Scroll para cargar más"}
             </p>
           </div>
         </section>
@@ -117,9 +150,19 @@ const AdminArchivos = () => {
                     type="text"
                     placeholder="Buscar por nombre, usuario o materia..."
                     value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onChange={(e) =>
+                      setSearchTerm(
+                        sanitizeInput(e.target.value, MAX_SEARCH_LENGTH)
+                      )
+                    }
+                    maxLength={MAX_SEARCH_LENGTH}
                     className="w-full pl-10 pr-4 py-2 bg-background border-2 border-primary font-mono text-sm focus:outline-none focus:border-primary/80"
                   />
+                  {searchTerm.length > MAX_SEARCH_LENGTH * 0.8 && (
+                    <span className="absolute right-2 top-1/2 -translate-y-1/2 font-mono text-xs text-muted-foreground">
+                      {searchTerm.length}/{MAX_SEARCH_LENGTH}
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -311,6 +354,36 @@ const AdminArchivos = () => {
                   ))}
                 </tbody>
               </table>
+
+              {/* Trigger para infinite scroll */}
+              {hasMore && !searchTerm && (
+                <div
+                  ref={loadMoreRef}
+                  className="flex justify-center py-8 border-t border-primary/20"
+                >
+                  {loadingMore ? (
+                    <div className="flex items-center gap-2 text-primary">
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      <span className="font-mono text-sm">
+                        Cargando más archivos...
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="font-mono text-xs text-muted-foreground">
+                      Scroll para cargar más
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {/* Mensaje cuando se cargaron todos */}
+              {!hasMore && files.length > 0 && (
+                <div className="text-center py-4 border-t border-primary/20">
+                  <span className="font-mono text-xs text-muted-foreground">
+                    ✓ Se cargaron todos los archivos ({totalCount})
+                  </span>
+                </div>
+              )}
             </div>
           )}
         </div>

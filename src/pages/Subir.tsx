@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Upload, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import Navigation from "@/components/Navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDriveUpload } from "@/hooks/use-drive-upload";
@@ -24,34 +25,41 @@ const SubirPage = () => {
   const { user, dbUser } = useAuth();
   const { openPicker, uploading, error } = useDriveUpload();
 
-  const [materias, setMaterias] = useState<Materia[]>([]);
-  const [comisiones, setComisiones] = useState<Comision[]>([]);
-  const [loading, setLoading] = useState(true);
-
   const [materiaId, setMateriaId] = useState("");
   const [comisionId, setComisionId] = useState("");
   const [tipo, setTipo] = useState<TipoArchivo | "">("");
   const [success, setSuccess] = useState(false);
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  // React Query para caché automático y carga instantánea
+  const { data: materias = [], isLoading: loadingMaterias } = useQuery({
+    queryKey: ["materias"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("materias")
+        .select("*")
+        .order("nombre");
+      if (error) throw error;
+      return data as Materia[];
+    },
+    staleTime: 1000 * 60 * 30, // 30 minutos - datos estables
+    gcTime: 1000 * 60 * 60, // 1 hora en caché
+  });
 
-  const loadData = async () => {
-    try {
-      const [materiasRes, comisionesRes] = await Promise.all([
-        supabase.from("materias").select("*").order("nombre"),
-        supabase.from("comisiones").select("*").order("codigo"),
-      ]);
+  const { data: comisiones = [], isLoading: loadingComisiones } = useQuery({
+    queryKey: ["comisiones"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("comisiones")
+        .select("*")
+        .order("codigo");
+      if (error) throw error;
+      return data as Comision[];
+    },
+    staleTime: 1000 * 60 * 30, // 30 minutos - datos estables
+    gcTime: 1000 * 60 * 60, // 1 hora en caché
+  });
 
-      if (materiasRes.data) setMaterias(materiasRes.data);
-      if (comisionesRes.data) setComisiones(comisionesRes.data);
-    } catch (err) {
-      console.error("Error cargando datos:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const loading = loadingMaterias || loadingComisiones;
 
   const handleSubmit = async () => {
     if (!materiaId || !comisionId || !tipo) return;

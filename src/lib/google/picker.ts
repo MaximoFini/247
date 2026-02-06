@@ -2,7 +2,8 @@ import { loadGoogleScripts } from './loader';
 
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 const API_KEY = import.meta.env.VITE_GOOGLE_API_KEY;
-const SCOPES = 'https://www.googleapis.com/auth/drive'; // ← CAMBIADO
+// Scope completo de Drive para acceder, modificar y compartir archivos del usuario
+const SCOPES = 'https://www.googleapis.com/auth/drive';
 
 export interface PickedFile {
   id: string;

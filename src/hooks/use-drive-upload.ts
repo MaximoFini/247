@@ -4,7 +4,7 @@
  * Maneja todo el flujo:
  * 1. Autenticación con Google Drive
  * 2. Selección de archivo con Google Picker
- * 3. Hacer el archivo público (Edge Function)
+ * 3. Hacer el archivo público (directo con Google Drive API)
  * 4. Guardar en la base de datos de Supabase
  * 5. Actualizar puntos del usuario
  */
@@ -15,9 +15,6 @@ import { supabase } from '@/lib/supabase/client';
 import { requestDriveAccess, showGooglePicker } from '@/lib/google/picker';
 import type { PickedFile } from '@/lib/google/picker';
 import type { TipoArchivo } from '@/types/database';
-
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 export interface UploadParams {
   materiaId: string | number;
@@ -113,7 +110,7 @@ export function useDriveUpload(): UseDriveUploadReturn {
 
         console.log('✅ Archivo seleccionado:', pickedFile.name);
 
-        // PASO 3: Hacer el archivo público usando Edge Function
+        // PASO 3: Hacer el archivo público directamente con Google Drive API
         console.log('🔓 Haciendo el archivo público...');
         let publicFileData: {
           success: boolean;
@@ -122,44 +119,80 @@ export function useDriveUpload(): UseDriveUploadReturn {
         };
 
         try {
-          const response = await fetch(
-            `${SUPABASE_URL}/functions/v1/make-file-public`,
+          // 3a. Hacer archivo público (compartir con "anyone")
+          const permissionsResponse = await fetch(
+            `https://www.googleapis.com/drive/v3/files/${pickedFile.id}/permissions`,
             {
               method: 'POST',
               headers: {
+                'Authorization': `Bearer ${accessToken}`,
                 'Content-Type': 'application/json',
-                Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
               },
               body: JSON.stringify({
-                fileId: pickedFile.id,
-                accessToken: accessToken,
+                role: 'reader',
+                type: 'anyone',
               }),
             }
           );
 
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(
-              errorData.error || 'Error al hacer el archivo público'
-            );
+          if (!permissionsResponse.ok) {
+            const errorData = await permissionsResponse.json().catch(() => ({}));
+            const errorMessage = errorData.error?.message || '';
+            
+            // Mensajes amigables según el tipo de error
+            let userMessage: string;
+            
+            if (permissionsResponse.status === 401) {
+              userMessage = 'Tu sesión de Google expiró. Por favor, intentá de nuevo.';
+            } else if (permissionsResponse.status === 404) {
+              userMessage = 'No se encontró el archivo. Verificá que exista en tu Drive.';
+            } else if (errorMessage.includes('sharingFolderNotAllowed')) {
+              userMessage = 'No podés compartir carpetas. Por favor, seleccioná un archivo.';
+            } else if (errorMessage.includes('domainPolicy')) {
+              userMessage = 'Tu organización no permite compartir archivos públicamente. Usá un archivo de tu Drive personal.';
+            } else if (errorMessage.includes('rateLimitExceeded')) {
+              userMessage = 'Límite de compartir excedido. Esperá unos minutos e intentá de nuevo.';
+            } else {
+              userMessage = 'No se pudo hacer el archivo público. Verificá que el archivo te pertenezca.';
+            }
+            
+            throw new Error(userMessage);
           }
 
-          publicFileData = await response.json();
+          console.log('✅ Permisos públicos configurados');
 
-          if (!publicFileData.success) {
-            throw new Error('No se pudo hacer el archivo público');
+          // 3b. Obtener metadata actualizada con webContentLink
+          const metadataResponse = await fetch(
+            `https://www.googleapis.com/drive/v3/files/${pickedFile.id}?fields=id,name,webViewLink,webContentLink`,
+            {
+              headers: {
+                'Authorization': `Bearer ${accessToken}`,
+              },
+            }
+          );
+
+          if (!metadataResponse.ok) {
+            throw new Error('No se pudo obtener la información del archivo');
           }
+
+          const metadata = await metadataResponse.json();
+
+          publicFileData = {
+            success: true,
+            webContentLink: metadata.webContentLink || metadata.webViewLink,
+            webViewLink: metadata.webViewLink,
+          };
 
           console.log('✅ Archivo público:', {
-            downloadUrl: publicFileData.downloadUrl,
-            alreadyPublic: publicFileData.alreadyPublic,
+            webContentLink: publicFileData.webContentLink,
+            webViewLink: publicFileData.webViewLink,
           });
         } catch (err) {
-          throw new Error(
-            `Error al configurar permisos del archivo: ${
-              err instanceof Error ? err.message : 'Error desconocido'
-            }`
-          );
+          // Si ya es un Error con mensaje, pasarlo tal cual
+          if (err instanceof Error) {
+            throw err;
+          }
+          throw new Error('Error desconocido al configurar permisos del archivo');
         }
 
         // PASO 4: Extraer extensión del archivo

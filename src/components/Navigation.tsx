@@ -43,8 +43,11 @@ const Navigation = () => {
             </Link>
 
             {loading ? (
-              <div className="font-mono text-xs uppercase tracking-widest text-primary/50">
-                ...
+              <div className="flex items-center gap-2">
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                <span className="font-mono text-xs uppercase tracking-widest text-primary/50">
+                  Cargando...
+                </span>
               </div>
             ) : user ? (
               <div className="flex items-center gap-4">

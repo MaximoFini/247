@@ -1,18 +1,22 @@
-import { Search, Loader2 } from "lucide-react";
-import { useState, useEffect, useCallback } from "react";
+import { Search, Loader2, AlertCircle } from "lucide-react";
+import { useState, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { INPUT_LIMITS, processSearchInput } from "@/lib/validation";
 
 interface TerminalSearchProps {
   onSearch: (query: string) => void;
   placeholder?: string;
-  isSearching?: boolean; // Indica si hay una búsqueda en progreso
+  isSearching?: boolean;
 }
+
+const MAX_SEARCH_LENGTH = INPUT_LIMITS.SEARCH;
 
 const TerminalSearch = ({
   onSearch,
   isSearching = false,
 }: TerminalSearchProps) => {
   const [query, setQuery] = useState("");
+  const [validationError, setValidationError] = useState<string | null>(null);
   const [isFocused, setIsFocused] = useState(false);
   const { user, dbUser } = useAuth();
 
@@ -31,25 +35,41 @@ const TerminalSearch = ({
 
   const username = getUserName();
 
-  // Llamar onSearch cada vez que cambia el query (el debounce se maneja en el hook)
+  // Llamar onSearch con validación
   const handleChange = useCallback(
     (value: string) => {
-      setQuery(value);
-      onSearch(value);
+      // Validar y sanitizar input
+      const {
+        value: sanitized,
+        isValid,
+        error,
+      } = processSearchInput(value, MAX_SEARCH_LENGTH);
+
+      if (!isValid) {
+        setValidationError(error);
+        return;
+      }
+
+      setValidationError(null);
+      setQuery(value.slice(0, MAX_SEARCH_LENGTH)); // Mostrar lo que escribió (limitado)
+      onSearch(sanitized); // Enviar sanitizado
     },
     [onSearch]
   );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // No es necesario hacer nada aquí, la búsqueda es en tiempo real
   };
 
   return (
     <form onSubmit={handleSubmit} className="w-full">
       <div
         className={`relative flex items-center border-4 border-primary bg-background transition-all ${
-          isFocused ? "toxic-glow-intense border-flash" : "toxic-glow"
+          validationError
+            ? "border-destructive"
+            : isFocused
+              ? "toxic-glow-intense border-flash"
+              : "toxic-glow"
         }`}
       >
         {/* Terminal prompt: username $ find */}
@@ -66,6 +86,7 @@ const TerminalSearch = ({
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           placeholder=""
+          maxLength={MAX_SEARCH_LENGTH}
           className="flex-1 bg-transparent px-4 py-6 font-mono text-xl text-primary placeholder:text-muted-foreground focus:outline-none"
         />
 
@@ -86,6 +107,29 @@ const TerminalSearch = ({
           {isSearching ? "BUSCANDO..." : "BUSCAR"}
         </div>
       </div>
+
+      {/* Mensaje de error de validación */}
+      {validationError && (
+        <div className="flex items-center gap-2 mt-2 px-4 py-2 bg-destructive/10 border border-destructive text-destructive">
+          <AlertCircle className="h-4 w-4" />
+          <span className="font-mono text-sm">{validationError}</span>
+        </div>
+      )}
+
+      {/* Contador de caracteres cuando se acerca al límite */}
+      {query.length > MAX_SEARCH_LENGTH * 0.8 && (
+        <div className="text-right mt-1">
+          <span
+            className={`font-mono text-xs ${
+              query.length >= MAX_SEARCH_LENGTH
+                ? "text-destructive"
+                : "text-muted-foreground"
+            }`}
+          >
+            {query.length}/{MAX_SEARCH_LENGTH}
+          </span>
+        </div>
+      )}
     </form>
   );
 };
