@@ -43,6 +43,45 @@ export interface Comision {
   created_at: string;
 }
 
+// =========================================
+// Tipos para el módulo "¿Qué Curso?"
+// =========================================
+
+export type EstadoMateria = 0 | 1 | 2 | 3; // 0=Regular, 1=Aprobada, 2=Bloqueada, 3=Cursable
+
+export interface MateriaPlanEstudios {
+  id: number;
+  nombre: string;
+  apodo: string;
+  estado: EstadoMateria;
+  creditos: number; // 0 para obligatorias, 3-4 para electivas
+  materiasQueActualiza: number[];
+  materiasQueNecesitaRegulares: number[];
+  materiasQueNecesitaAprobadas: number[];
+}
+
+export interface MateriaUsuario {
+  id: string;
+  user_id: string;
+  materia_id: number;
+  estado: EstadoMateria;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProgresoAcademico {
+  obligatorias: {
+    total: number; // 36
+    aprobadas: number;
+    regulares: number;
+    porcentaje: number;
+  };
+  electivas: {
+    totalPuntos: number; // 20
+    puntosObtenidos: number;
+  };
+}
+
 export interface Profesor {
   id: string;
   nombre: string;

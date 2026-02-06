@@ -1,0 +1,565 @@
+[
+  {
+    "id": 1,
+    "nombre": "Análisis Matemático I",
+    "estado": 0,
+    "materiasQueActualiza": [9, 10, 17, 18, 22],
+    "materiasQueNecesitaRegulares": [],
+    "materiasQueNecesitaAprobadas": [],
+    "creditos": 0,
+    "apodo": "AM1"
+  },
+  {
+    "id": 2,
+    "nombre": "Álgebra y Geometría Analítica",
+    "estado": 0,
+    "materiasQueActualiza": [9, 17, 18, 22],
+    "materiasQueNecesitaRegulares": [],
+    "materiasQueNecesitaAprobadas": [],
+    "creditos": 0,
+    "apodo": "AGA"
+  },
+  {
+    "id": 3,
+    "nombre": "Física I",
+    "estado": 0,
+    "materiasQueActualiza": [10, 21],
+    "materiasQueNecesitaRegulares": [],
+    "materiasQueNecesitaAprobadas": [],
+    "creditos": 0,
+    "apodo": "FIS1"
+  },
+  {
+    "id": 4,
+    "nombre": "Inglés I",
+    "estado": 0,
+    "materiasQueActualiza": [12, 23],
+    "materiasQueNecesitaRegulares": [],
+    "materiasQueNecesitaAprobadas": [],
+    "creditos": 0,
+    "apodo": "ING1"
+  },
+  {
+    "id": 5,
+    "nombre": "Lógica y Estructuras Discretas",
+    "estado": 0,
+    "materiasQueActualiza": [13, 14, 19, 20],
+    "materiasQueNecesitaRegulares": [],
+    "materiasQueNecesitaAprobadas": [],
+    "creditos": 0,
+    "apodo": "LED"
+  },
+  {
+    "id": 6,
+    "nombre": "Algoritmo y Estructura de Datos",
+    "estado": 0,
+    "materiasQueActualiza": [13, 14, 16, 19, 20, 23, 50, 55, 99],
+    "materiasQueNecesitaRegulares": [],
+    "materiasQueNecesitaAprobadas": [],
+    "creditos": 0,
+    "apodo": "AED"
+  },
+  {
+    "id": 7,
+    "nombre": "Arquitectura de Computadoras",
+    "estado": 0,
+    "materiasQueActualiza": [15, 21],
+    "materiasQueNecesitaRegulares": [],
+    "materiasQueNecesitaAprobadas": [],
+    "creditos": 0,
+    "apodo": "ACO"
+  },
+  {
+    "id": 8,
+    "nombre": "Sistemas y Proceso de Negocios",
+    "estado": 0,
+    "materiasQueActualiza": [16, 23, 52, 53, 56, 66, 99],
+    "materiasQueNecesitaRegulares": [],
+    "materiasQueNecesitaAprobadas": [],
+    "creditos": 0,
+    "apodo": "SPN"
+  },
+  {
+    "id": 11,
+    "nombre": "Ingeniería y Sociedad",
+    "estado": 0,
+    "materiasQueActualiza": [24],
+    "materiasQueNecesitaRegulares": [],
+    "materiasQueNecesitaAprobadas": [],
+    "creditos": 0,
+    "apodo": "ISO"
+  },
+  {
+    "id": 9,
+    "nombre": "Análisis Matemático II",
+    "estado": 0,
+    "materiasQueActualiza": [22, 28, 29],
+    "materiasQueNecesitaRegulares": [1, 2],
+    "materiasQueNecesitaAprobadas": [],
+    "creditos": 0,
+    "apodo": "AM2"
+  },
+  {
+    "id": 10,
+    "nombre": "Física II",
+    "estado": 0,
+    "materiasQueActualiza": [29],
+    "materiasQueNecesitaRegulares": [1, 3],
+    "materiasQueNecesitaAprobadas": [],
+    "creditos": 0,
+    "apodo": "FIS2"
+  },
+  {
+    "id": 12,
+    "nombre": "Inglés II",
+    "estado": 0,
+    "materiasQueActualiza": [36],
+    "materiasQueNecesitaRegulares": [4],
+    "materiasQueNecesitaAprobadas": [],
+    "creditos": 0,
+    "apodo": "ING2"
+  },
+  {
+    "id": 13,
+    "nombre": "Sintaxis y Semántica de los Lenguajes",
+    "estado": 0,
+    "materiasQueActualiza": [19, 25, 50, 51, 54, 55, 57, 68, 99],
+    "materiasQueNecesitaRegulares": [5, 6],
+    "materiasQueNecesitaAprobadas": [],
+    "creditos": 0,
+    "apodo": "SSL"
+  },
+  {
+    "id": 14,
+    "nombre": "Paradigmas de Programación",
+    "estado": 0,
+    "materiasQueActualiza": [20, 23, 25, 50, 51, 54, 57, 58, 68, 99],
+    "materiasQueNecesitaRegulares": [5, 6],
+    "materiasQueNecesitaAprobadas": [],
+    "creditos": 0,
+    "apodo": "PPR"
+  },
+  {
+    "id": 15,
+    "nombre": "Sistemas Operativos",
+    "estado": 0,
+    "materiasQueActualiza": [26],
+    "materiasQueNecesitaRegulares": [7],
+    "materiasQueNecesitaAprobadas": [],
+    "creditos": 0,
+    "apodo": "SOP"
+  },
+  {
+    "id": 16,
+    "nombre": "Análisis de Sistemas de Información (Int)",
+    "estado": 0,
+    "materiasQueActualiza": [19, 20, 23, 30, 52, 53, 56, 63, 99],
+    "materiasQueNecesitaRegulares": [6, 8],
+    "materiasQueNecesitaAprobadas": [],
+    "creditos": 0,
+    "apodo": "ASI"
+  },
+  {
+    "id": 17,
+    "nombre": "Probabilidad y Estadística",
+    "estado": 0,
+    "materiasQueActualiza": [27, 28, 31, 32],
+    "materiasQueNecesitaRegulares": [1, 2],
+    "materiasQueNecesitaAprobadas": [],
+    "creditos": 0,
+    "apodo": "PYE"
+  },
+  {
+    "id": 18,
+    "nombre": "Economía",
+    "estado": 0,
+    "materiasQueActualiza": [30, 33, 34],
+    "materiasQueNecesitaRegulares": [],
+    "materiasQueNecesitaAprobadas": [1, 2],
+    "creditos": 0,
+    "apodo": "ECO"
+  },
+  {
+    "id": 19,
+    "nombre": "Base de Datos",
+    "estado": 0,
+    "materiasQueActualiza": [
+      25, 32, 51, 52, 53, 54, 56, 57, 58, 63, 64, 65, 66, 67, 68
+    ],
+    "materiasQueNecesitaRegulares": [13, 16],
+    "materiasQueNecesitaAprobadas": [5, 6],
+    "creditos": 0,
+    "apodo": "BD"
+  },
+  {
+    "id": 20,
+    "nombre": "Desarrollo de Software",
+    "estado": 0,
+    "materiasQueActualiza": [
+      25, 35, 36, 51, 54, 57, 58, 59, 60, 61, 62, 65, 66, 67, 68
+    ],
+    "materiasQueNecesitaRegulares": [14, 16],
+    "materiasQueNecesitaAprobadas": [5, 6],
+    "creditos": 0,
+    "apodo": "DDS"
+  },
+  {
+    "id": 21,
+    "nombre": "Comunicación de Datos",
+    "estado": 0,
+    "materiasQueActualiza": [26, 35],
+    "materiasQueNecesitaRegulares": [],
+    "materiasQueNecesitaAprobadas": [3, 7],
+    "creditos": 0,
+    "apodo": "COM"
+  },
+  {
+    "id": 22,
+    "nombre": "Análisis Numérico",
+    "estado": 0,
+    "materiasQueActualiza": [27, 29, 31],
+    "materiasQueNecesitaRegulares": [9],
+    "materiasQueNecesitaAprobadas": [1, 2],
+    "creditos": 0,
+    "apodo": "AN"
+  },
+  {
+    "id": 23,
+    "nombre": "Diseño de Sistemas de Información (Int)",
+    "estado": 0,
+    "materiasQueActualiza": [25, 30, 33, 36],
+    "materiasQueNecesitaRegulares": [14, 16],
+    "materiasQueNecesitaAprobadas": [4, 6, 8],
+    "creditos": 0,
+    "apodo": "DSI"
+  },
+  {
+    "id": 99,
+    "nombre": "Seminario Integrados (Analista)",
+    "estado": 0,
+    "materiasQueActualiza": [],
+    "materiasQueNecesitaRegulares": [16],
+    "materiasQueNecesitaAprobadas": [6, 8, 13, 14],
+    "apodo": "SI"
+  },
+  {
+    "id": 24,
+    "nombre": "Legislación",
+    "estado": 0,
+    "materiasQueActualiza": [34],
+    "materiasQueNecesitaRegulares": [11],
+    "materiasQueNecesitaAprobadas": [],
+    "creditos": 0,
+    "apodo": "LEG"
+  },
+  {
+    "id": 25,
+    "nombre": "Ingeniería y Calidad de Software",
+    "estado": 0,
+    "materiasQueActualiza": [36, 65],
+    "materiasQueNecesitaRegulares": [19, 20, 23],
+    "materiasQueNecesitaAprobadas": [13, 14],
+    "creditos": 0,
+    "apodo": "ISW"
+  },
+  {
+    "id": 26,
+    "nombre": "Redes de Datos",
+    "estado": 0,
+    "materiasQueActualiza": [35, 36, 58, 66, 67, 68],
+    "materiasQueNecesitaRegulares": [15, 21],
+    "materiasQueNecesitaAprobadas": [],
+    "creditos": 0,
+    "apodo": "RED"
+  },
+  {
+    "id": 27,
+    "nombre": "Investigación Operativa",
+    "estado": 0,
+    "materiasQueActualiza": [33, 64],
+    "materiasQueNecesitaRegulares": [17, 22],
+    "materiasQueNecesitaAprobadas": [],
+    "creditos": 0,
+    "apodo": "IOP"
+  },
+  {
+    "id": 28,
+    "nombre": "Simulación",
+    "estado": 0,
+    "materiasQueActualiza": [31, 32],
+    "materiasQueNecesitaRegulares": [17],
+    "materiasQueNecesitaAprobadas": [9],
+    "creditos": 0,
+    "apodo": "SIM"
+  },
+  {
+    "id": 29,
+    "nombre": "Tecnologías Para la Automatización",
+    "estado": 0,
+    "materiasQueActualiza": [],
+    "materiasQueNecesitaRegulares": [10, 22],
+    "materiasQueNecesitaAprobadas": [9],
+    "creditos": 0,
+    "apodo": "TA"
+  },
+  {
+    "id": 30,
+    "nombre": "Administración de Sistemas de Información(Int)",
+    "estado": 0,
+    "materiasQueActualiza": [34, 35, 36, 59, 60, 61, 62, 63],
+    "materiasQueNecesitaRegulares": [18, 23],
+    "materiasQueNecesitaAprobadas": [16],
+    "creditos": 0,
+    "apodo": "AS"
+  },
+  {
+    "id": 31,
+    "nombre": "Inteligencia Artificial",
+    "estado": 0,
+    "materiasQueActualiza": [],
+    "materiasQueNecesitaRegulares": [28],
+    "materiasQueNecesitaAprobadas": [17, 22],
+    "creditos": 0,
+    "apodo": "IA"
+  },
+  {
+    "id": 32,
+    "nombre": "Ciencia de Datos",
+    "estado": 0,
+    "materiasQueActualiza": [],
+    "materiasQueNecesitaRegulares": [28],
+    "materiasQueNecesitaAprobadas": [17, 19],
+    "creditos": 0,
+    "apodo": "CD"
+  },
+  {
+    "id": 33,
+    "nombre": "Sistemas de Gestión",
+    "estado": 0,
+    "materiasQueActualiza": [],
+    "materiasQueNecesitaRegulares": [18, 27],
+    "materiasQueNecesitaAprobadas": [23],
+    "creditos": 0,
+    "apodo": "SG"
+  },
+  {
+    "id": 34,
+    "nombre": "Gestión Gerencial",
+    "estado": 0,
+    "materiasQueActualiza": [],
+    "materiasQueNecesitaRegulares": [24, 30],
+    "materiasQueNecesitaAprobadas": [18],
+    "creditos": 0,
+    "apodo": "GG"
+  },
+  {
+    "id": 35,
+    "nombre": "Seguridad en los Sistemas de Información",
+    "estado": 0,
+    "materiasQueActualiza": [],
+    "materiasQueNecesitaRegulares": [26, 30],
+    "materiasQueNecesitaAprobadas": [20, 21],
+    "creditos": 0,
+    "apodo": "SEG"
+  },
+  {
+    "id": 36,
+    "nombre": "Proyecto Final (Int)",
+    "estado": 0,
+    "materiasQueActualiza": [],
+    "materiasQueNecesitaRegulares": [25, 26, 30],
+    "materiasQueNecesitaAprobadas": [12, 20, 23],
+    "creditos": 0,
+    "apodo": "GPRO"
+  },
+  {
+    "id": 50,
+    "nombre": "Backend de Aplicaciones",
+    "estado": 0,
+    "creditos": 4,
+    "materiasQueActualiza": [],
+    "materiasQueNecesitaRegulares": [14, 13],
+    "materiasQueNecesitaAprobadas": [6],
+    "apodo": "BDA"
+  },
+  {
+    "id": 51,
+    "nombre": "Green Software",
+    "estado": 0,
+    "creditos": 3,
+    "materiasQueActualiza": [],
+    "materiasQueNecesitaRegulares": [20, 19],
+    "materiasQueNecesitaAprobadas": [14, 13],
+    "apodo": "GS"
+  },
+  {
+    "id": 52,
+    "nombre": "Gestión Industrial de la Producción",
+    "estado": 0,
+    "creditos": 3,
+    "materiasQueActualiza": [],
+    "materiasQueNecesitaRegulares": [19],
+    "materiasQueNecesitaAprobadas": [8, 16],
+    "apodo": "GIP"
+  },
+  {
+    "id": 53,
+    "nombre": "Gestión de la Mejora de los Procesos",
+    "estado": 0,
+    "creditos": 3,
+    "materiasQueActualiza": [],
+    "materiasQueNecesitaRegulares": [19],
+    "materiasQueNecesitaAprobadas": [8, 16],
+    "apodo": "GMP"
+  },
+  {
+    "id": 54,
+    "nombre": "Desarrollo y Operaciones devOPS",
+    "estado": 0,
+    "creditos": 3,
+    "materiasQueActualiza": [],
+    "materiasQueNecesitaRegulares": [19, 20],
+    "materiasQueNecesitaAprobadas": [14, 13],
+    "apodo": "devOPS"
+  },
+  {
+    "id": 55,
+    "nombre": "Desarrollo de Aplicaciones Con Objetos",
+    "estado": 0,
+    "creditos": 3,
+    "materiasQueActualiza": [],
+    "materiasQueNecesitaRegulares": [13],
+    "materiasQueNecesitaAprobadas": [6],
+    "apodo": "DAO"
+  },
+  {
+    "id": 56,
+    "nombre": "Comunicación Multimedial en el Desarrollo de Sistemas de Información",
+    "estado": 0,
+    "creditos": 3,
+    "materiasQueActualiza": [],
+    "materiasQueNecesitaRegulares": [19],
+    "materiasQueNecesitaAprobadas": [8, 16],
+    "apodo": "CMDSI"
+  },
+  {
+    "id": 57,
+    "nombre": "Arquitectura de Software",
+    "estado": 0,
+    "creditos": 3,
+    "materiasQueActualiza": [],
+    "materiasQueNecesitaRegulares": [19, 20],
+    "materiasQueNecesitaAprobadas": [14, 13],
+    "apodo": "ADS"
+  },
+  {
+    "id": 58,
+    "nombre": "Desarrollo de Tecnología Blockchain",
+    "estado": 0,
+    "creditos": 3,
+    "materiasQueActualiza": [],
+    "materiasQueNecesitaRegulares": [26, 19],
+    "materiasQueNecesitaAprobadas": [14, 20],
+    "apodo": "DTB"
+  },
+  {
+    "id": 59,
+    "nombre": "Creatividad e Innovación en Ingeniería",
+    "estado": 0,
+    "creditos": 3,
+    "materiasQueActualiza": [],
+    "materiasQueNecesitaRegulares": [30],
+    "materiasQueNecesitaAprobadas": [20],
+    "apodo": "CII"
+  },
+  {
+    "id": 60,
+    "nombre": "Auditorías de Si/Ti",
+    "estado": 0,
+    "creditos": 3,
+    "materiasQueActualiza": [],
+    "materiasQueNecesitaRegulares": [30],
+    "materiasQueNecesitaAprobadas": [20],
+    "apodo": "AST"
+  },
+  {
+    "id": 61,
+    "nombre": "Gerenciamiento Estratégico",
+    "estado": 0,
+    "creditos": 3,
+    "materiasQueActualiza": [],
+    "materiasQueNecesitaRegulares": [30],
+    "materiasQueNecesitaAprobadas": [20],
+    "apodo": "GE"
+  },
+  {
+    "id": 62,
+    "nombre": "Consultoría en Negocios Digitales",
+    "estado": 0,
+    "creditos": 3,
+    "materiasQueActualiza": [],
+    "materiasQueNecesitaRegulares": [30],
+    "materiasQueNecesitaAprobadas": [20],
+    "apodo": "CND"
+  },
+  {
+    "id": 63,
+    "nombre": "Emprendimientos Tecnológicos",
+    "estado": 0,
+    "creditos": 3,
+    "materiasQueActualiza": [],
+    "materiasQueNecesitaRegulares": [30],
+    "materiasQueNecesitaAprobadas": [16, 19],
+    "apodo": "ET"
+  },
+  {
+    "id": 64,
+    "nombre": "Decisiones en Escenarios Complejos",
+    "estado": 0,
+    "creditos": 3,
+    "materiasQueActualiza": [],
+    "materiasQueNecesitaRegulares": [27],
+    "materiasQueNecesitaAprobadas": [19],
+    "apodo": "DEC"
+  },
+  {
+    "id": 65,
+    "nombre": "Testing de Software",
+    "estado": 0,
+    "creditos": 3,
+    "materiasQueActualiza": [],
+    "materiasQueNecesitaRegulares": [25],
+    "materiasQueNecesitaAprobadas": [19, 20],
+    "apodo": "TS"
+  },
+  {
+    "id": 66,
+    "nombre": "Seguridad en el Desarrollo de Software",
+    "estado": 0,
+    "creditos": 3,
+    "materiasQueActualiza": [],
+    "materiasQueNecesitaRegulares": [26, 19],
+    "materiasQueNecesitaAprobadas": [20, 8],
+    "apodo": "SDS"
+  },
+  {
+    "id": 67,
+    "nombre": "Integración de Aplicaciones en Entorno Web",
+    "estado": 0,
+    "creditos": 3,
+    "materiasQueActualiza": [],
+    "materiasQueNecesitaRegulares": [26, 19],
+    "materiasQueNecesitaAprobadas": [19, 20],
+    "apodo": "IWEB"
+  },
+  {
+    "id": 68,
+    "nombre": "Ingeniería de Software de Fuentes Abiertas/Libres",
+    "estado": 0,
+    "creditos": 3,
+    "materiasQueActualiza": [],
+    "materiasQueNecesitaRegulares": [19, 20, 26],
+    "materiasQueNecesitaAprobadas": [13, 14],
+    "apodo": "ISFA"
+  }
+]

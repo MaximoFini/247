@@ -36,6 +36,12 @@ const Navigation = () => {
               PROFESORES
             </Link>
             <Link
+              to="/quecurso"
+              className="font-mono text-sm uppercase tracking-widest text-primary transition-all hover:text-primary/80"
+            >
+              ¿QUÉ CURSO?
+            </Link>
+            <Link
               to="/subir"
               className="font-mono text-sm uppercase tracking-widest text-primary transition-all hover:text-primary/80"
             >

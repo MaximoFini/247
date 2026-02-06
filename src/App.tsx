@@ -40,9 +40,13 @@ const Index = lazy(() => import("./pages/Index"));
 // Páginas públicas con lazy loading
 const Login = lazy(() => import("./pages/Login"));
 const Profesores = lazy(() => import("./pages/Profesores"));
+const QueCurso = lazy(() => import("./pages/QueCurso"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Privacy = lazy(() => import("@/pages/Privacy"));
 const Terms = lazy(() => import("@/pages/Terms"));
+
+// Componentes de error
+const ErrorBoundary = lazy(() => import("./components/ErrorBoundary"));
 
 // Páginas protegidas (usuarios autenticados) - lazy
 const Perfil = lazy(() => import("./pages/Perfil"));
@@ -52,7 +56,7 @@ const Subir = lazy(() => import("./pages/Subir"));
 const AdminDashboard = lazy(() => import("@/pages/admin/Dashboard"));
 const AdminArchivos = lazy(() => import("@/pages/admin/Archivos"));
 const ArchivosReportados = lazy(
-  () => import("@/pages/admin/ArchivosReportados")
+  () => import("@/pages/admin/ArchivosReportados"),
 );
 const AdminProfesores = lazy(() => import("@/pages/admin/Profesores"));
 const AdminMaterias = lazy(() => import("@/pages/admin/Materias"));
@@ -93,6 +97,16 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/login" element={<Login />} />
               <Route path="/profesores" element={<Profesores />} />
+              <Route
+                path="/quecurso"
+                element={
+                  <Suspense fallback={<ContentSkeleton />}>
+                    <ErrorBoundary>
+                      <QueCurso />
+                    </ErrorBoundary>
+                  </Suspense>
+                }
+              />
               <Route path="/privacy" element={<Privacy />} />
               <Route path="/terms" element={<Terms />} />
 
