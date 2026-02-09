@@ -42,6 +42,12 @@ const Navigation = () => {
               ¿QUÉ CURSO?
             </Link>
             <Link
+              to="/avisos"
+              className="font-mono text-sm uppercase tracking-widest text-primary transition-all hover:text-primary/80"
+            >
+              AVISOS
+            </Link>
+            <Link
               to="/subir"
               className="font-mono text-sm uppercase tracking-widest text-primary transition-all hover:text-primary/80"
             >

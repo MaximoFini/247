@@ -166,7 +166,7 @@ const HeroSection = memo(() => {
               </span>
             </div>
             <p className="font-mono text-xs text-center text-muted-foreground">
-              Sorteo de departamento
+              Sorteo de departamento (es verdad)
             </p>
           </div>
         </div>

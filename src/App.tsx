@@ -41,6 +41,7 @@ const Index = lazy(() => import("./pages/Index"));
 const Login = lazy(() => import("./pages/Login"));
 const Profesores = lazy(() => import("./pages/Profesores"));
 const QueCurso = lazy(() => import("./pages/QueCurso"));
+const Avisos = lazy(() => import("./pages/Avisos"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Privacy = lazy(() => import("@/pages/Privacy"));
 const Terms = lazy(() => import("@/pages/Terms"));
@@ -107,6 +108,7 @@ const App = () => (
                   </Suspense>
                 }
               />
+              <Route path="/avisos" element={<Avisos />} />
               <Route path="/privacy" element={<Privacy />} />
               <Route path="/terms" element={<Terms />} />
 

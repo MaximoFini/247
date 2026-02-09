@@ -102,8 +102,8 @@ const QueCurso = () => {
         return;
       }
 
-      const materiaIds =
-        MATERIAS_POR_ANIO[anio as keyof typeof MATERIAS_POR_ANIO] || [];
+      const anioNum = parseInt(anio) as keyof typeof MATERIAS_POR_ANIO;
+      const materiaIds = MATERIAS_POR_ANIO[anioNum] || [];
 
       // Filtrar solo materias no electivas y que no sean aprobadas
       const materiasAActualizar = materiaIds.filter((id) => {
@@ -534,15 +534,6 @@ const QueCurso = () => {
                   Año
                 </h2>
                 <div className="h-px bg-gray-800 flex-grow"></div>
-                <button
-                  onClick={() => handleApproveYearMaterias(anio)}
-                  title="Aprobar todas las materias del año"
-                  className="text-primary hover:text-primary/70 transition-colors opacity-60 hover:opacity-100"
-                >
-                  <span className="material-symbols-outlined text-xl">
-                    check_circle
-                  </span>
-                </button>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">

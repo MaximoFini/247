@@ -112,7 +112,7 @@ const SubirPage = () => {
 
           <div className="container relative mx-auto px-4 text-center">
             <h1 className="mb-4 font-brutal text-6xl text-primary md:text-7xl">
-              APORTAR A LA CAUSA
+              SI NO SUBIS SOS PERONISTA
             </h1>
             <p className="mb-4 font-mono text-lg text-muted-foreground md:text-xl">
               Compartí material con la comunidad
@@ -126,6 +126,29 @@ const SubirPage = () => {
         </section>
 
         <div className="container mx-auto px-4 pb-20">
+          {/* Aviso de Responsabilidad */}
+          <div className="mx-auto mb-6 max-w-2xl border-2 border-primary bg-primary/5 p-6">
+            <div className="flex items-start gap-4">
+              <AlertCircle className="h-6 w-6 text-primary flex-shrink-0 mt-1" />
+              <div className="flex-1">
+                <h3 className="mb-3 font-mono text-sm font-bold uppercase tracking-widest text-primary">
+                  AVISO IMPORTANTE
+                </h3>
+                <p className="font-mono text-sm leading-relaxed text-foreground">
+                  Esta es una herramienta de estudiantes para estudiantes, por
+                  favor, cuidemos la integridad de la página entre todos. No
+                  está permitido bajo ningún punto de vista contenido ofensivo,
+                  spam, publicidades o enlaces maliciosos. Gracias. Google aun
+                  no me verifica la pagina, por lo tanto les va a pedir que
+                  apreten "Continuar" para subir el archivo. La API de Drive
+                  solo deja subir archivos que sean propios y luego los
+                  convierte en publicos, por eso los permisos que les van a
+                  pedir.
+                </p>
+              </div>
+            </div>
+          </div>
+
           {!user && (
             <div className="mx-auto mb-6 max-w-2xl border-2 border-primary bg-primary/10 p-4 flex items-center gap-3">
               <AlertCircle className="h-5 w-5 text-primary flex-shrink-0" />
@@ -159,21 +182,6 @@ const SubirPage = () => {
           )}
 
           <div className="mx-auto max-w-2xl space-y-6">
-            {/* Info Box */}
-            <div className="border-2 border-primary bg-primary/5 p-6">
-              <h3 className="mb-2 font-mono text-sm uppercase tracking-widest text-primary">
-                ¿CÓMO FUNCIONA?
-              </h3>
-              <ol className="space-y-1 font-mono text-xs text-muted-foreground">
-                <li>1. Seleccioná materia, comisión y tipo de archivo</li>
-                <li>2. Click en "SELECCIONAR DE DRIVE"</li>
-                <li>3. Elegí el archivo desde tu Google Drive</li>
-                <li>
-                  4. El archivo se comparte automáticamente y sumás puntos
-                </li>
-              </ol>
-            </div>
-
             {/* Form */}
             {loading ? (
               <div className="flex justify-center py-12">

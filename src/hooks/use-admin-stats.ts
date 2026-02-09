@@ -27,7 +27,6 @@ export function useAdminStats() {
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const fetchStats = async (forceRefresh = false) => {
-    // ⚡ PATRÓN OBLIGATORIO: Verificar auth antes de cargar
     if (authLoading) {
       console.log("⏳ useAdminStats: esperando auth...");
       return;
@@ -43,7 +42,6 @@ export function useAdminStats() {
       return;
     }
 
-    // Evitar refetch si está en cache
     const now = Date.now();
     if (!forceRefresh && lastFetchRef.current && (now - lastFetchRef.current) < CACHE_TTL_MS) {
       console.log('📊 Usando stats cacheados');
@@ -51,7 +49,6 @@ export function useAdminStats() {
       return;
     }
 
-    // Cancelar request anterior si existe
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
@@ -60,9 +57,8 @@ export function useAdminStats() {
     try {
       setLoading(true);
       setError(null);
-      console.log("🔍 useAdminStats: cargando...");
+      console.log("🔍 useAdminStats: cargando (queries directas)...");
 
-      // Timeout para las requests
       const timeoutId = setTimeout(() => {
         if (abortControllerRef.current) {
           abortControllerRef.current.abort();
@@ -70,125 +66,206 @@ export function useAdminStats() {
         }
       }, FETCH_TIMEOUT_MS);
 
-      // Optimización: usar vistas pre-calculadas + queries agregados en lugar de SELECT *
-      const [generalRes, usuariosRes, uploadersRes, tiposRes, donacionesStatsRes] = await Promise.all([
-        // Vista pre-calculada (ya optimizada en la BD)
-        supabase.from('admin_stats_general').select('*').single().abortSignal(abortControllerRef.current.signal),
-        supabase.from('admin_stats_usuarios').select('*').single().abortSignal(abortControllerRef.current.signal),
-        // Top 10 uploaders (ya limitado)
-        supabase.from('admin_top_uploaders').select('*').limit(10).abortSignal(abortControllerRef.current.signal),
-        // OPTIMIZADO: Usar RPC o GROUP BY si existe, sino limitar
-        supabase.rpc('get_tipos_archivos_stats').abortSignal(abortControllerRef.current.signal).catch(() => 
-          // Fallback: query limitada solo con tipo (no SELECT *)
-          supabase.from('archivos').select('tipo').limit(500).abortSignal(abortControllerRef.current!.signal)
-        ),
-        // OPTIMIZADO: Agregado en lugar de traer todos los usuarios
-        supabase.rpc('get_donaciones_stats').abortSignal(abortControllerRef.current.signal).catch(() =>
-          // Fallback: solo traer puntos_donaciones (1 columna)
-          supabase.from('users').select('puntos_donaciones').gt('puntos_donaciones', 0).abortSignal(abortControllerRef.current!.signal)
-        ),
+      // ✅ QUERIES DIRECTAS (sin vistas materializadas)
+      const [
+        usersCountRes,
+        archivosActivosRes,
+        archivosReportadosRes,
+        profesoresCountRes,
+        materiasCountRes,
+        comisionesCountRes,
+        ratingsCountRes,
+        totalTamanioRes,
+        totalDescargasRes,
+        adminsCountRes,
+        uploadersRes,
+        archivosConTipoRes,
+        donacionesRes,
+      ] = await Promise.all([
+        // 1. Total usuarios
+        supabase.from('users').select('id', { count: 'exact', head: true })
+          .abortSignal(abortControllerRef.current.signal),
+        
+        // 2. Archivos activos
+        supabase.from('archivos').select('id', { count: 'exact', head: true })
+          .eq('activo', true)
+          .abortSignal(abortControllerRef.current.signal),
+        
+        // 3. Archivos reportados
+        supabase.from('archivos').select('id', { count: 'exact', head: true })
+          .eq('reportado', true)
+          .abortSignal(abortControllerRef.current.signal),
+        
+        // 4. Total profesores
+        supabase.from('profesores').select('id', { count: 'exact', head: true })
+          .abortSignal(abortControllerRef.current.signal),
+        
+        // 5. Total materias
+        supabase.from('materias').select('id', { count: 'exact', head: true })
+          .abortSignal(abortControllerRef.current.signal),
+        
+        // 6. Total comisiones
+        supabase.from('comisiones').select('id', { count: 'exact', head: true })
+          .abortSignal(abortControllerRef.current.signal),
+        
+        // 7. Total ratings
+        supabase.from('ratings').select('id', { count: 'exact', head: true })
+          .abortSignal(abortControllerRef.current.signal),
+        
+        // 8. Espacio total (suma de tamaños)
+        supabase.from('archivos').select('tamanio_mb')
+          .eq('activo', true)
+          .abortSignal(abortControllerRef.current.signal),
+        
+        // 9. Total descargas (suma)
+        supabase.from('archivos').select('descargas')
+          .eq('activo', true)
+          .abortSignal(abortControllerRef.current.signal),
+        
+        // 10. Total admins
+        supabase.from('users').select('id', { count: 'exact', head: true })
+          .eq('is_admin', true)
+          .abortSignal(abortControllerRef.current.signal),
+        
+        // 11. Top uploaders (agregación manual)
+        supabase.from('users').select(`
+          id,
+          nombre,
+          email,
+          puntos_archivos,
+          puntos_donaciones,
+          archivos:archivos(id, tamanio_mb, descargas)
+        `).gt('puntos_archivos', 0)
+          .order('puntos_archivos', { ascending: false })
+          .limit(10)
+          .abortSignal(abortControllerRef.current.signal),
+        
+        // 12. Tipos de archivos
+        supabase.from('archivos').select('tipo')
+          .eq('activo', true)
+          .abortSignal(abortControllerRef.current.signal),
+        
+        // 13. Usuarios con donaciones
+        supabase.from('users').select('puntos_donaciones')
+          .gt('puntos_donaciones', 0)
+          .abortSignal(abortControllerRef.current.signal),
       ]);
 
       clearTimeout(timeoutId);
 
       // Verificar si fue abortado
-      if (generalRes.error?.message?.includes('abort') || 
-          usuariosRes.error?.message?.includes('abort') ||
-          uploadersRes.error?.message?.includes('abort')) {
+      if (usersCountRes.error?.message?.includes('abort')) {
         console.log("⏹️ useAdminStats: requests abortadas");
         return;
       }
 
-      if (generalRes.error) throw generalRes.error;
-      if (usuariosRes.error) throw usuariosRes.error;
-      if (uploadersRes.error) throw uploadersRes.error;
+      // ✅ CALCULAR ESTADÍSTICAS GENERALES
+      const totalUsuarios = usersCountRes.count || 0;
+      const totalArchivosActivos = archivosActivosRes.count || 0;
+      const totalArchivosReportados = archivosReportadosRes.count || 0;
+      const totalProfesores = profesoresCountRes.count || 0;
+      const totalMaterias = materiasCountRes.count || 0;
+      const totalComisiones = comisionesCountRes.count || 0;
+      const totalRatings = ratingsCountRes.count || 0;
 
-      setStatsGeneral(generalRes.data);
-      setTopUploaders(uploadersRes.data || []);
-      console.log("✅ useAdminStats: cargado");
+      const espacioTotalMb = (totalTamanioRes.data || []).reduce(
+        (sum: number, row: any) => sum + parseFloat(row.tamanio_mb || 0), 
+        0
+      );
 
-      // Calcular estadísticas de tipos de archivos
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const tiposData = (tiposRes as any)?.data;
-      if (tiposData && Array.isArray(tiposData)) {
-        // Si viene de RPC, ya viene procesado
-        if (tiposData[0]?.cantidad !== undefined) {
-          const total = tiposData.reduce((sum: number, t: any) => sum + t.cantidad, 0);
-          setTiposArchivos(tiposData.map((t: any) => ({
-            tipo: t.tipo,
-            cantidad: t.cantidad,
-            porcentaje: total > 0 ? (t.cantidad / total) * 100 : 0,
-          })));
-        } else {
-          // Fallback: calcular manualmente
-          const tipoCount: Record<string, number> = {};
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          tiposData.forEach((archivo: any) => {
-            const tipo = archivo.tipo || 'otro';
-            tipoCount[tipo] = (tipoCount[tipo] || 0) + 1;
-          });
+      const totalDescargas = (totalDescargasRes.data || []).reduce(
+        (sum: number, row: any) => sum + (row.descargas || 0), 
+        0
+      );
 
-          const total = tiposData.length;
-          const tiposStats: TipoArchivoStats[] = Object.entries(tipoCount)
-            .map(([tipo, cantidad]) => ({
-              tipo,
-              cantidad,
-              porcentaje: total > 0 ? (cantidad / total) * 100 : 0,
-            }))
-            .sort((a, b) => b.cantidad - a.cantidad);
+      setStatsGeneral({
+        total_usuarios: totalUsuarios,
+        total_archivos_activos: totalArchivosActivos,
+        total_archivos_reportados: totalArchivosReportados,
+        total_profesores: totalProfesores,
+        total_materias: totalMaterias,
+        total_comisiones: totalComisiones,
+        total_ratings: totalRatings,
+        espacio_total_mb: espacioTotalMb,
+        total_descargas: totalDescargas,
+      });
 
-          setTiposArchivos(tiposStats);
-        }
-      }
-
-      // Calcular estadísticas de usuarios
-      const totalUsuarios = generalRes.data?.total_usuarios || 0;
-      const totalArchivos = generalRes.data?.total_archivos_activos || 0;
-      const promedioArchivosPorUsuario = totalUsuarios > 0 
-        ? totalArchivos / totalUsuarios 
+      // ✅ CALCULAR ESTADÍSTICAS DE USUARIOS
+      const totalAdmins = adminsCountRes.count || 0;
+      
+      // Promedio puntos por archivos
+      const promedioPuntosArchivos = totalUsuarios > 0 
+        ? (uploadersRes.data || []).reduce((sum: number, u: any) => sum + (u.puntos_archivos || 0), 0) / totalUsuarios
         : 0;
 
-      // Calcular usuarios que donaron
-      let usuariosQueDonaron = 0;
-      let totalDonaciones = 0;
+      // Promedio archivos por usuario
+      const promedioArchivosPorUsuario = totalUsuarios > 0 
+        ? totalArchivosActivos / totalUsuarios 
+        : 0;
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const donacionesData = (donacionesStatsRes as any)?.data;
-      if (donacionesData) {
-        // Si viene de RPC, ya viene procesado
-        if (donacionesData.usuarios_que_donaron !== undefined) {
-          usuariosQueDonaron = donacionesData.usuarios_que_donaron;
-          totalDonaciones = donacionesData.total_donaciones;
-        } else if (Array.isArray(donacionesData)) {
-          // Fallback: solo usuarios con donaciones > 0 (ya filtrado en query)
-          usuariosQueDonaron = donacionesData.length;
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          donacionesData.forEach((usuario: any) => {
-            totalDonaciones += usuario.puntos_donaciones || 0;
-          });
-        }
-      }
-
+      // Usuarios que donaron
+      const usuariosQueDonaron = donacionesRes.data?.length || 0;
+      const totalDonaciones = (donacionesRes.data || []).reduce(
+        (sum: number, u: any) => sum + (u.puntos_donaciones || 0), 
+        0
+      );
       const promedioPuntosDonaciones = usuariosQueDonaron > 0 
         ? totalDonaciones / usuariosQueDonaron 
         : 0;
-
       const porcentajeUsuariosDonaron = totalUsuarios > 0 
         ? (usuariosQueDonaron / totalUsuarios) * 100 
         : 0;
 
       setStatsUsuarios({
-        ...usuariosRes.data,
-        promedio_archivos_por_usuario: promedioArchivosPorUsuario,
+        total_usuarios: totalUsuarios,
+        total_admins: totalAdmins,
+        promedio_puntos_archivos: promedioPuntosArchivos,
         promedio_puntos_donaciones: promedioPuntosDonaciones,
+        promedio_archivos_por_usuario: promedioArchivosPorUsuario,
         usuarios_que_donaron: usuariosQueDonaron,
         porcentaje_usuarios_donaron: porcentajeUsuariosDonaron,
       });
 
-      lastFetchRef.current = now;
+      // ✅ TOP UPLOADERS (transformar datos agregados)
+      const transformedUploaders: AdminTopUploader[] = (uploadersRes.data || []).map((user: any) => {
+        const archivos = user.archivos || [];
+        const totalArchivos = archivos.length;
+        const totalMbSubidos = archivos.reduce((sum: number, a: any) => sum + parseFloat(a.tamanio_mb || 0), 0);
+        const totalDescargasUser = archivos.reduce((sum: number, a: any) => sum + (a.descargas || 0), 0);
 
+        return {
+          id: user.id,
+          nombre: user.nombre || 'Sin nombre',
+          email: user.email,
+          puntos_archivos: user.puntos_archivos || 0,
+          total_archivos: totalArchivos,
+          total_mb_subidos: totalMbSubidos,
+          total_descargas: totalDescargasUser,
+        };
+      });
+      setTopUploaders(transformedUploaders);
+
+      // ✅ TIPOS DE ARCHIVOS (contar manualmente)
+      const tipoCount: Record<string, number> = {};
+      (archivosConTipoRes.data || []).forEach((archivo: any) => {
+        const tipo = archivo.tipo || 'otro';
+        tipoCount[tipo] = (tipoCount[tipo] || 0) + 1;
+      });
+
+      const total = archivosConTipoRes.data?.length || 0;
+      const tiposStats: TipoArchivoStats[] = Object.entries(tipoCount)
+        .map(([tipo, cantidad]) => ({
+          tipo,
+          cantidad,
+          porcentaje: total > 0 ? (cantidad / total) * 100 : 0,
+        }))
+        .sort((a, b) => b.cantidad - a.cantidad);
+
+      setTiposArchivos(tiposStats);
+
+      lastFetchRef.current = now;
+      console.log("✅ useAdminStats: cargado con queries directas");
     } catch (err: any) {
-      // Ignorar errores de abort
       if (err instanceof Error && err.message?.includes('abort')) {
         return;
       }

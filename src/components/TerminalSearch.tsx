@@ -22,7 +22,7 @@ const TerminalSearch = ({
 
   // Generar nombre de usuario: todo junto y en minúsculas
   const getUserName = () => {
-    if (!user) return "gorreado/a/e";
+    if (!user) return "gorreado/a";
 
     // Usar el nombre del dbUser si existe
     if (dbUser?.nombre) {
@@ -30,7 +30,7 @@ const TerminalSearch = ({
     }
 
     // Fallback al email antes del @
-    return user.email?.split("@")[0]?.toLowerCase() || "gorreado/a/e";
+    return user.email?.split("@")[0]?.toLowerCase() || "gorreado/a";
   };
 
   const username = getUserName();
@@ -54,7 +54,7 @@ const TerminalSearch = ({
       setQuery(value.slice(0, MAX_SEARCH_LENGTH)); // Mostrar lo que escribió (limitado)
       onSearch(sanitized); // Enviar sanitizado
     },
-    [onSearch]
+    [onSearch],
   );
 
   const handleSubmit = (e: React.FormEvent) => {
