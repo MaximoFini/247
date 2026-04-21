@@ -33,9 +33,9 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
-      <main className="pt-16">
+      <main className="pt-14 sm:pt-16">
         <HeroSection />
-        <div className="container mx-auto space-y-8 px-4 pb-20">
+        <div className="container mx-auto space-y-4 sm:space-y-6 lg:space-y-8 px-2 sm:px-4 pb-12 sm:pb-16 lg:pb-20">
           <TerminalSearch
             onSearch={handleSearch}
             isSearching={isSearchPending}
@@ -63,23 +63,23 @@ const Index = () => {
         </div>
 
         {/* Footer */}
-        <footer className="border-t-2 border-primary py-8">
-          <div className="container mx-auto px-4 text-center">
-            <div className="flex justify-center gap-6 mb-4">
+        <footer className="border-t-2 border-primary py-6 sm:py-8">
+          <div className="container mx-auto px-2 sm:px-4 text-center">
+            <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-6 mb-3 sm:mb-4">
               <Link
                 to="/privacy"
-                className="font-mono text-xs text-muted-foreground hover:text-primary"
+                className="font-mono text-[10px] sm:text-xs text-muted-foreground hover:text-primary"
               >
                 Política de Privacidad
               </Link>
               <Link
                 to="/terms"
-                className="font-mono text-xs text-muted-foreground hover:text-primary"
+                className="font-mono text-[10px] sm:text-xs text-muted-foreground hover:text-primary"
               >
                 Términos de Servicio
               </Link>
             </div>
-            <p className="font-mono text-xs text-muted-foreground">
+            <p className="font-mono text-[10px] sm:text-xs text-muted-foreground px-4">
               © {new Date().getFullYear()} 247 — Plataforma colaborativa para
               estudiantes.
             </p>

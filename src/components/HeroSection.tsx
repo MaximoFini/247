@@ -70,15 +70,15 @@ const StatItem = memo(
     label: string;
     loading: boolean;
   }) => (
-    <div className="text-center">
-      <p className="font-brutal text-4xl text-primary">
+    <div className="text-center min-w-[80px] sm:min-w-[100px]">
+      <p className="font-brutal text-2xl sm:text-3xl md:text-4xl text-primary">
         {loading
           ? "..."
           : typeof value === "number"
             ? value.toLocaleString("es-AR")
             : value}
       </p>
-      <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
+      <p className="font-mono text-[10px] sm:text-xs uppercase tracking-widest text-muted-foreground">
         {label}
       </p>
     </div>
@@ -124,35 +124,35 @@ const HeroSection = memo(() => {
         247
       </div>
 
-      <div className="container relative mx-auto px-4 text-center">
+      <div className="container relative mx-auto px-4 sm:px-6 text-center">
         {/* Main Headline */}
-        <h1 className="mb-6 font-brutal text-6xl leading-none text-primary md:text-8xl lg:text-9xl">
+        <h1 className="mb-4 sm:mb-6 font-brutal text-5xl sm:text-6xl leading-none text-primary md:text-8xl lg:text-9xl">
           247.
         </h1>
-        <h2 className="mb-8 font-brutal text-3xl leading-tight text-card-foreground md:text-4xl lg:text-5xl">
+        <h2 className="mb-6 sm:mb-8 font-brutal text-2xl sm:text-3xl leading-tight text-card-foreground md:text-4xl lg:text-5xl px-2">
           <span className="text-primary">LA MANSION DEL ESTUDIANTE</span>
         </h2>
 
         {/* Subtext */}
-        <p className="mx-auto max-w-2xl font-mono text-lg text-muted-foreground md:text-xl">
+        <p className="mx-auto max-w-2xl font-mono text-base sm:text-lg text-muted-foreground md:text-xl px-2">
           De Sistemas <span className="text-primary">para</span>{" "}
           <span className="text-primary">Sistemas.</span>
         </p>
 
         {/* Stats */}
-        <div className="mt-12 border-t-2 border-primary/30">
-          <div className="flex flex-wrap items-center justify-center gap-8 py-6">
+        <div className="mt-8 sm:mt-12 border-t-2 border-primary/30">
+          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 md:gap-8 py-4 sm:py-6">
             <StatItem value={archivos} label="ARCHIVOS" loading={loading} />
-            <div className="h-12 w-0.5 bg-primary/30" />
+            <div className="h-12 w-0.5 bg-primary/30 hidden sm:block" />
             <StatItem value={materias} label="MATERIAS" loading={loading} />
-            <div className="h-12 w-0.5 bg-primary/30" />
+            <div className="h-12 w-0.5 bg-primary/30 hidden sm:block" />
             <StatItem value={descargas} label="DESCARGAS" loading={loading} />
           </div>
 
           {/* Barra de progreso hacia el objetivo */}
-          <div className="flex flex-col gap-2 px-4 pb-4">
-            <div className="flex items-center gap-4">
-              <span className="font-mono text-xs text-muted-foreground whitespace-nowrap">
+          <div className="flex flex-col gap-2 px-2 sm:px-4 pb-4">
+            <div className="flex items-center gap-2 sm:gap-4">
+              <span className="font-mono text-[10px] sm:text-xs text-muted-foreground whitespace-nowrap">
                 {archivos}/{OBJETIVO_ARCHIVOS}
               </span>
               <div className="flex-1 h-2 bg-primary/20 border border-primary/30">
@@ -161,11 +161,11 @@ const HeroSection = memo(() => {
                   style={{ width: `${progreso}%` }}
                 />
               </div>
-              <span className="font-mono text-xs text-primary whitespace-nowrap">
+              <span className="font-mono text-[10px] sm:text-xs text-primary whitespace-nowrap">
                 {progreso.toFixed(0)}%
               </span>
             </div>
-            <p className="font-mono text-xs text-center text-muted-foreground">
+            <p className="font-mono text-[10px] sm:text-xs text-center text-muted-foreground px-2">
               Sorteo de departamento (es verdad)
             </p>
           </div>

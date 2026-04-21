@@ -64,7 +64,7 @@ const TerminalSearch = ({
   return (
     <form onSubmit={handleSubmit} className="w-full">
       <div
-        className={`relative flex items-center border-4 border-primary bg-background transition-all ${
+        className={`relative flex items-center border-2 sm:border-4 border-primary bg-background transition-all ${
           validationError
             ? "border-destructive"
             : isFocused
@@ -73,9 +73,9 @@ const TerminalSearch = ({
         }`}
       >
         {/* Terminal prompt: username $ find */}
-        <span className="pl-6 font-mono text-xl text-primary whitespace-nowrap">
-          <span className="text-primary/70">{username}</span>
-          <span className="text-muted-foreground"> $ </span>
+        <span className="pl-2 sm:pl-4 lg:pl-6 font-mono text-sm sm:text-base lg:text-xl text-primary whitespace-nowrap">
+          <span className="text-primary/70 hidden sm:inline">{username}</span>
+          <span className="text-muted-foreground hidden sm:inline"> $ </span>
           <span className="text-primary">find</span>
         </span>
 
@@ -87,24 +87,24 @@ const TerminalSearch = ({
           onBlur={() => setIsFocused(false)}
           placeholder=""
           maxLength={MAX_SEARCH_LENGTH}
-          className="flex-1 bg-transparent px-4 py-6 font-mono text-xl text-primary placeholder:text-muted-foreground focus:outline-none"
+          className="flex-1 bg-transparent px-2 sm:px-4 py-3 sm:py-4 lg:py-6 font-mono text-sm sm:text-base lg:text-xl text-primary placeholder:text-muted-foreground focus:outline-none"
         />
 
         {/* Blinking cursor when focused and empty */}
         {isFocused && query === "" && (
-          <span className="font-mono text-xl text-primary animate-cursor">
+          <span className="font-mono text-sm sm:text-base lg:text-xl text-primary animate-cursor">
             _
           </span>
         )}
 
         {/* Indicador de búsqueda en progreso */}
-        <div className="flex h-full items-center gap-2 border-l-4 border-primary bg-primary px-8 py-6 font-mono text-sm uppercase tracking-widest text-primary-foreground">
+        <div className="flex h-full items-center gap-1 sm:gap-2 border-l-2 sm:border-l-4 border-primary bg-primary px-3 sm:px-6 lg:px-8 py-3 sm:py-4 lg:py-6 font-mono text-[10px] sm:text-xs lg:text-sm uppercase tracking-wider sm:tracking-widest text-primary-foreground">
           {isSearching ? (
-            <Loader2 className="h-5 w-5 animate-spin" />
+            <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
           ) : (
-            <Search className="h-5 w-5" />
+            <Search className="h-4 w-4 sm:h-5 sm:w-5" />
           )}
-          {isSearching ? "BUSCANDO..." : "BUSCAR"}
+          <span className="hidden sm:inline">{isSearching ? "BUSCANDO..." : "BUSCAR"}</span>
         </div>
       </div>
 
