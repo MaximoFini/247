@@ -8,6 +8,7 @@ import {
   PieChart,
   Heart,
   Link2,
+  Megaphone,
 } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import { useAdminStats } from "@/hooks/use-admin-stats";
@@ -261,6 +262,13 @@ const AdminDashboard = () => {
               <p className="font-mono text-lg text-primary">
                 Gestionar Asignaciones
               </p>
+            </Link>
+            <Link
+              to="/admin/avisos"
+              className="border-2 border-primary bg-background p-6 hover:bg-primary/10 transition-all"
+            >
+              <Megaphone className="h-8 w-8 text-primary mb-3" />
+              <p className="font-mono text-lg text-primary">Gestionar Avisos</p>
             </Link>
           </div>
         </div>

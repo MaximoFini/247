@@ -351,7 +351,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       options: {
         redirectTo: `${window.location.origin}`,
         queryParams: {
-          access_type: "offline",
           prompt: "consent",
         },
       },

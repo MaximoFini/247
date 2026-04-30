@@ -4,7 +4,6 @@ import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import Navigation from "@/components/Navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { useDriveUpload } from "@/hooks/use-drive-upload";
 import { supabase } from "@/lib/supabase/client";
 import type { Materia, Comision, TipoArchivo } from "@/types/database";
 
@@ -23,12 +22,14 @@ const TIPO_ARCHIVO_OPTIONS: {
 
 const SubirPage = () => {
   const { user, dbUser, loading: authLoading } = useAuth();
-  const { openPicker, uploading, error } = useDriveUpload();
 
   const [materiaId, setMateriaId] = useState("");
   const [comisionId, setComisionId] = useState("");
   const [tipo, setTipo] = useState<TipoArchivo | "">("");
   const [success, setSuccess] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   // ⚡ FASE 2: React Query con sincronización de auth
   const { data: materias = [], isLoading: loadingMaterias } = useQuery({
@@ -65,28 +66,26 @@ const SubirPage = () => {
 
   const loading = loadingMaterias || loadingComisiones;
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSelectedFile(e.target.files?.[0] ?? null);
+    setError(null);
+  };
+
   const handleSubmit = async () => {
-    if (!materiaId || !comisionId || !tipo) return;
+    if (!materiaId || !comisionId || !tipo || !selectedFile) return;
 
-    // Debug: ver qué valores se están enviando
-    console.log("📝 Valores del formulario:", { materiaId, comisionId, tipo });
-
+    setError(null);
     setSuccess(false);
-    const result = await openPicker({
-      materiaId: materiaId,
-      comisionId: comisionId,
-      tipo: tipo as TipoArchivo,
-    });
+    setUploading(true);
 
-    if (result) {
-      setSuccess(true);
-      // Resetear form
-      setMateriaId("");
-      setComisionId("");
-      setTipo("");
-
-      // Ocultar mensaje después de 5s
-      setTimeout(() => setSuccess(false), 5000);
+    try {
+      // TODO: implementar upload a Cloudflare R2
+      // const result = await uploadToR2({ file: selectedFile, materiaId, comisionId, tipo });
+      throw new Error("Upload a R2 no implementado aún");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error desconocido");
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -138,12 +137,7 @@ const SubirPage = () => {
                   Esta es una herramienta de estudiantes para estudiantes, por
                   favor, cuidemos la integridad de la página entre todos. No
                   está permitido bajo ningún punto de vista contenido ofensivo,
-                  spam, publicidades o enlaces maliciosos. Gracias. Google aun
-                  no me verifica la pagina, por lo tanto les va a pedir que
-                  apreten "Continuar" para subir el archivo. La API de Drive
-                  solo deja subir archivos que sean propios y luego los
-                  convierte en publicos, por eso los permisos que les van a
-                  pedir.
+                  spam, publicidades o enlaces maliciosos. Gracias.
                 </p>
               </div>
             </div>
@@ -243,10 +237,23 @@ const SubirPage = () => {
                   </div>
                 )}
 
+                <input
+                  type="file"
+                  accept=".pdf,.zip,.doc,.docx,.ppt,.pptx"
+                  disabled={!user || uploading}
+                  onChange={handleFileChange}
+                  className="w-full border-2 border-primary bg-background px-4 py-3 font-mono text-primary disabled:opacity-50 file:mr-4 file:border-0 file:bg-primary file:px-4 file:py-2 file:font-mono file:text-sm file:uppercase file:text-primary-foreground"
+                />
+
                 <button
                   onClick={handleSubmit}
                   disabled={
-                    !user || !materiaId || !comisionId || !tipo || uploading
+                    !user ||
+                    !materiaId ||
+                    !comisionId ||
+                    !tipo ||
+                    !selectedFile ||
+                    uploading
                   }
                   className="w-full border-2 border-primary bg-primary py-4 font-mono uppercase tracking-widest text-primary-foreground transition-all hover:bg-transparent hover:text-primary disabled:opacity-50 glitch-hover disabled:cursor-not-allowed flex items-center justify-center gap-3"
                 >
@@ -258,31 +265,10 @@ const SubirPage = () => {
                   ) : (
                     <>
                       <Upload className="h-5 w-5" />
-                      SELECCIONAR DE DRIVE
+                      SUBIR ARCHIVO
                     </>
                   )}
                 </button>
-
-                {/* Progreso detallado durante la subida */}
-                {uploading && (
-                  <div className="border-2 border-primary bg-primary/5 p-4 space-y-2">
-                    <p className="font-mono text-xs text-primary animate-pulse">
-                      🔐 Autenticando con Google Drive...
-                    </p>
-                    <p className="font-mono text-xs text-muted-foreground">
-                      📂 Esperando selección de archivo...
-                    </p>
-                    <p className="font-mono text-xs text-muted-foreground">
-                      🔓 Configurando permisos públicos...
-                    </p>
-                    <p className="font-mono text-xs text-muted-foreground">
-                      💾 Guardando en base de datos...
-                    </p>
-                    <p className="font-mono text-xs text-muted-foreground">
-                      🎯 Actualizando tus puntos...
-                    </p>
-                  </div>
-                )}
               </>
             )}
           </div>
