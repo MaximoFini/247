@@ -1,11 +1,39 @@
 import { useState } from "react";
 import { Upload, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
+import { zip } from "fflate";
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const MAX_FILE_SIZE_MB = 50;
+const ALLOWED_EXTENSIONS = ["pdf", "zip", "doc", "docx", "ppt", "pptx"];
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import Navigation from "@/components/Navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase/client";
 import type { Materia, Comision, TipoArchivo } from "@/types/database";
+
+// Comprime un File en un ZIP client-side. Para archivos ya ZIP, los devuelve sin cambios.
+function compressToZip(file: File): Promise<{ blob: Blob; name: string }> {
+  const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+  if (ext === "zip") {
+    return Promise.resolve({ blob: file, name: file.name });
+  }
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const data = new Uint8Array(e.target!.result as ArrayBuffer);
+      zip({ [file.name]: [data, { level: 6 }] }, (err, compressed) => {
+        if (err) return reject(err);
+        resolve({
+          blob: new Blob([compressed], { type: "application/zip" }),
+          name: file.name + ".zip",
+        });
+      });
+    };
+    reader.onerror = () => reject(reader.error);
+    reader.readAsArrayBuffer(file);
+  });
+}
 
 const TIPO_ARCHIVO_OPTIONS: {
   value: TipoArchivo;
@@ -30,6 +58,7 @@ const SubirPage = () => {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   // ⚡ FASE 2: React Query con sincronización de auth
   const { data: materias = [], isLoading: loadingMaterias } = useQuery({
@@ -72,16 +101,120 @@ const SubirPage = () => {
   };
 
   const handleSubmit = async () => {
-    if (!materiaId || !comisionId || !tipo || !selectedFile) return;
+    if (!materiaId || !comisionId || !tipo || !selectedFile || !user) return;
 
     setError(null);
     setSuccess(false);
     setUploading(true);
+    setUploadProgress(0);
 
     try {
-      // TODO: implementar upload a Cloudflare R2
-      // const result = await uploadToR2({ file: selectedFile, materiaId, comisionId, tipo });
-      throw new Error("Upload a R2 no implementado aún");
+      // Paso 1 — Validación client-side
+      const fileSizeMB = selectedFile.size / 1024 / 1024;
+      if (fileSizeMB > MAX_FILE_SIZE_MB) {
+        throw new Error(
+          `El archivo supera el límite de ${MAX_FILE_SIZE_MB} MB`,
+        );
+      }
+      const ext = selectedFile.name.split(".").pop()?.toLowerCase() ?? "";
+      if (!ALLOWED_EXTENSIONS.includes(ext)) {
+        throw new Error(`Extensión no permitida: .${ext}`);
+      }
+
+      // Paso 1.5 — Comprimir el archivo client-side antes de subir
+      setUploadProgress(0);
+      const { blob: compressedBlob, name: compressedName } =
+        await compressToZip(selectedFile);
+      const uploadContentType = "application/zip";
+
+      // Paso 2 — Obtener presigned URL de la Edge Function
+      const session = await supabase.auth.getSession();
+      const token = session.data.session?.access_token;
+      if (!token) throw new Error("No hay sesión activa");
+
+      const uploadUrlRes = await fetch(
+        `${SUPABASE_URL}/functions/v1/get-upload-url`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            fileName: compressedName,
+            contentType: uploadContentType,
+            materiaId,
+            comisionId,
+            tipo,
+          }),
+        },
+      );
+
+      if (!uploadUrlRes.ok) {
+        const errData = await uploadUrlRes.json().catch(() => ({}));
+        throw new Error(
+          errData.error ||
+            `Error al generar URL de subida (${uploadUrlRes.status})`,
+        );
+      }
+
+      const { presignedUrl, r2Key, publicUrl } = await uploadUrlRes.json();
+
+      // Paso 3 — Upload directo a R2 con barra de progreso (XHR)
+      const compressedSizeMB = compressedBlob.size / 1024 / 1024;
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) {
+            setUploadProgress(Math.round((e.loaded / e.total) * 100));
+          }
+        };
+        xhr.onload = () => {
+          if (xhr.status === 200) {
+            resolve();
+          } else {
+            reject(new Error(`Error al subir a R2: ${xhr.status}`));
+          }
+        };
+        xhr.onerror = () =>
+          reject(new Error("Error de red al subir el archivo"));
+        xhr.open("PUT", presignedUrl);
+        xhr.setRequestHeader("Content-Type", uploadContentType);
+        xhr.send(compressedBlob);
+      });
+
+      // Paso 4 — Insertar registro en la DB
+      const { error: insertError } = await supabase.from("archivos").insert({
+        user_id: user.id,
+        materia_id: materiaId,
+        comision_id: comisionId,
+        tipo,
+        nombre: selectedFile.name,
+        r2_key: r2Key,
+        file_url: publicUrl,
+        tamanio_mb: parseFloat(compressedSizeMB.toFixed(2)),
+        extension: ext,
+        descargas: 0,
+        activo: true,
+        reportado: false,
+      });
+      if (insertError) throw insertError;
+
+      // Paso 5 — Actualizar puntos (atómico, falla en silencio para no bloquear)
+      const { error: rpcError } = await supabase.rpc("add_puntos_archivos", {
+        target_user_id: user.id,
+        puntos_a_agregar: puntosSeleccionados,
+      });
+      if (rpcError) {
+        console.error("Error al actualizar puntos (no crítico):", rpcError);
+      }
+
+      setSuccess(true);
+      setSelectedFile(null);
+      setMateriaId("");
+      setComisionId("");
+      setTipo("");
+      setUploadProgress(0);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error desconocido");
     } finally {
@@ -260,7 +393,9 @@ const SubirPage = () => {
                   {uploading ? (
                     <>
                       <Loader2 className="h-5 w-5 animate-spin" />
-                      PROCESANDO...
+                      {uploadProgress > 0 && uploadProgress < 100
+                        ? `SUBIENDO... ${uploadProgress}%`
+                        : "PROCESANDO..."}
                     </>
                   ) : (
                     <>
@@ -269,6 +404,21 @@ const SubirPage = () => {
                     </>
                   )}
                 </button>
+
+                {uploading && uploadProgress > 0 && (
+                  <div className="w-full border-2 border-primary bg-background h-4 overflow-hidden">
+                    <div
+                      className="h-full bg-primary transition-all duration-200"
+                      style={{ width: `${uploadProgress}%` }}
+                    />
+                  </div>
+                )}
+
+                {uploading && (
+                  <p className="font-mono text-xs text-muted-foreground text-center">
+                    No cierres esta página mientras se sube el archivo
+                  </p>
+                )}
               </>
             )}
           </div>

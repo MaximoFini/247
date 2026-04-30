@@ -9,8 +9,8 @@ export interface UserFile {
   extension: string;
   tamanio_mb: number;
   descargas: number;
-  drive_link: string;
-  drive_file_id: string;
+  file_url: string;
+  r2_key: string;
   activo: boolean;
   reportado: boolean;
   created_at: string;
@@ -42,14 +42,14 @@ export function useUserFiles() {
           extension,
           tamanio_mb,
           descargas,
-          drive_link,
-          drive_file_id,
+          file_url,
+          r2_key,
           activo,
           reportado,
           created_at,
           materia:materias(nombre),
           comision:comisiones(codigo)
-        `
+        `,
         )
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
@@ -64,8 +64,8 @@ export function useUserFiles() {
         extension: file.extension,
         tamanio_mb: file.tamanio_mb,
         descargas: file.descargas,
-        drive_link: file.drive_link,
-        drive_file_id: file.drive_file_id,
+        file_url: file.file_url,
+        r2_key: file.r2_key,
         activo: file.activo,
         reportado: file.reportado,
         created_at: file.created_at,

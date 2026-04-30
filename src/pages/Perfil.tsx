@@ -291,15 +291,25 @@ const Perfil = () => {
 
                       {/* Acciones */}
                       <div className="flex flex-col gap-2">
-                        <a
-                          href={file.drive_link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center justify-center gap-2 border-2 border-primary bg-transparent px-4 py-2 font-mono text-xs uppercase tracking-widest text-primary transition-all hover:bg-primary hover:text-primary-foreground whitespace-nowrap"
-                        >
-                          <ExternalLink className="h-3 w-3" />
-                          VER EN DRIVE
-                        </a>
+                        {file.file_url ? (
+                          <button
+                            onClick={async () => {
+                              await supabase.rpc("increment_descargas", {
+                                archivo_id: file.id,
+                              });
+                              window.open(file.file_url, "_blank");
+                            }}
+                            className="flex items-center justify-center gap-2 border-2 border-primary bg-transparent px-4 py-2 font-mono text-xs uppercase tracking-widest text-primary transition-all hover:bg-primary hover:text-primary-foreground whitespace-nowrap"
+                          >
+                            <ExternalLink className="h-3 w-3" />
+                            DESCARGAR
+                          </button>
+                        ) : (
+                          <span className="flex items-center justify-center gap-2 border-2 border-muted bg-transparent px-4 py-2 font-mono text-xs uppercase tracking-widest text-muted-foreground whitespace-nowrap cursor-not-allowed">
+                            <ExternalLink className="h-3 w-3" />
+                            NO DISPONIBLE
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>

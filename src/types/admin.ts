@@ -1,8 +1,8 @@
 export interface AdminStatsGeneral {
-  total_usuarios:  number;
+  total_usuarios: number;
   total_archivos_activos: number;
   total_archivos_reportados: number;
-  total_profesores:  number;
+  total_profesores: number;
   total_materias: number;
   total_comisiones: number;
   total_ratings: number;
@@ -13,7 +13,7 @@ export interface AdminStatsGeneral {
 export interface AdminStatsUsuarios {
   total_usuarios: number;
   total_admins: number;
-  promedio_puntos_archivos:  number;
+  promedio_puntos_archivos: number;
   promedio_puntos_donaciones: number; // Donación media (total_donaciones / usuarios_que_donaron)
   promedio_archivos_por_usuario: number; // total_archivos / total_usuarios
   usuarios_que_donaron: number; // Cantidad de usuarios que donaron
@@ -35,7 +35,7 @@ export interface AdminArchivoReportado {
   nombre: string;
   tipo: string;
   extension: string; // Agregado
-  drive_link: string;
+  file_url: string;
   tamanio_mb: string;
   descargas: number; // Agregado
   activo: boolean;
@@ -46,9 +46,9 @@ export interface AdminArchivoReportado {
   materia_nombre: string | null;
   comision_codigo: string | null;
   uploader_nombre: string | null;
-  uploader_email:  string | null;
+  uploader_email: string | null;
   reportador_nombre: string | null;
-  reportador_email:  string | null;
+  reportador_email: string | null;
   total_reportes: number;
 }
 
@@ -57,10 +57,11 @@ export interface AdminArchivo {
   nombre: string;
   tipo: string;
   extension: string;
-  drive_link: string;
+  file_url: string;
+  r2_key: string | null;
   tamanio_mb: string;
   descargas: number;
-  activo:  boolean;
+  activo: boolean;
   reportado: boolean;
   created_at: string;
   materia_nombre: string | null;
@@ -70,8 +71,8 @@ export interface AdminArchivo {
 }
 
 export interface ProfesorMateriaComision {
-  id:  string;
-  profesor_id:  string;
+  id: string;
+  profesor_id: string;
   materia_id: string;
   comision_id: string;
   created_at: string;

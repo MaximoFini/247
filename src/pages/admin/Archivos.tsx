@@ -50,13 +50,13 @@ const AdminArchivos = () => {
 
       if (node) observerRef.current.observe(node);
     },
-    [loading, loadingMore, hasMore, loadMore, searchTerm]
+    [loading, loadingMore, hasMore, loadMore, searchTerm],
   );
 
   const handleDelete = async (id: string, nombre: string) => {
     if (
       !confirm(
-        `¿Estás seguro de eliminar "${nombre}"? Esta acción no se puede deshacer.`
+        `¿Estás seguro de eliminar "${nombre}"? Esta acción no se puede deshacer.`,
       )
     ) {
       return;
@@ -152,7 +152,7 @@ const AdminArchivos = () => {
                     value={searchTerm}
                     onChange={(e) =>
                       setSearchTerm(
-                        sanitizeInput(e.target.value, MAX_SEARCH_LENGTH)
+                        sanitizeInput(e.target.value, MAX_SEARCH_LENGTH),
                       )
                     }
                     maxLength={MAX_SEARCH_LENGTH}
@@ -302,16 +302,25 @@ const AdminArchivos = () => {
                       </td>
                       <td className="p-3">
                         <div className="flex gap-2">
-                          {/* Ver en Drive */}
-                          <a
-                            href={file.drive_link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="p-2 border border-primary text-primary hover:bg-primary hover:text-background transition-colors"
-                            title="Ver en Drive"
-                          >
-                            <ExternalLink className="h-4 w-4" />
-                          </a>
+                          {/* Ver archivo */}
+                          {file.file_url ? (
+                            <a
+                              href={file.file_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-2 border border-primary text-primary hover:bg-primary hover:text-background transition-colors"
+                              title="Ver archivo"
+                            >
+                              <ExternalLink className="h-4 w-4" />
+                            </a>
+                          ) : (
+                            <span
+                              className="p-2 border border-muted text-muted-foreground cursor-not-allowed"
+                              title="Archivo no disponible"
+                            >
+                              <ExternalLink className="h-4 w-4" />
+                            </span>
+                          )}
 
                           {/* Toggle activo */}
                           <button

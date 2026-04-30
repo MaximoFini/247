@@ -18,7 +18,7 @@ const ArchivosReportados = () => {
 
   const handleAction = async (
     archivoId: string,
-    action: "reject" | "delete"
+    action: "reject" | "delete",
   ) => {
     setActioningId(archivoId);
     const success = await moderateFile(archivoId, action);
@@ -155,23 +155,30 @@ const ArchivosReportados = () => {
                         Acciones
                       </h4>
                       <div className="space-y-3">
-                        {/* Ver en Drive */}
-                        <a
-                          href={file.drive_link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center justify-center gap-2 border-2 border-primary bg-transparent px-4 py-2 font-mono text-xs uppercase tracking-widest text-primary transition-all hover:bg-primary hover:text-primary-foreground w-full"
-                        >
-                          <ExternalLink className="h-3 w-3" />
-                          Ver archivo
-                        </a>
+                        {/* Ver archivo */}
+                        {file.file_url ? (
+                          <a
+                            href={file.file_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-center gap-2 border-2 border-primary bg-transparent px-4 py-2 font-mono text-xs uppercase tracking-widest text-primary transition-all hover:bg-primary hover:text-primary-foreground w-full"
+                          >
+                            <ExternalLink className="h-3 w-3" />
+                            VER ARCHIVO
+                          </a>
+                        ) : (
+                          <span className="flex items-center justify-center gap-2 border-2 border-muted bg-transparent px-4 py-2 font-mono text-xs uppercase tracking-widest text-muted-foreground w-full cursor-not-allowed">
+                            <ExternalLink className="h-3 w-3" />
+                            NO DISPONIBLE
+                          </span>
+                        )}
 
                         {/* Rechazar reporte (archivo queda activo pero sin reporte) */}
                         <button
                           onClick={() => {
                             if (
                               window.confirm(
-                                "¿Rechazar este reporte? El archivo quedará activo pero se quitará de reportados."
+                                "¿Rechazar este reporte? El archivo quedará activo pero se quitará de reportados.",
                               )
                             ) {
                               handleAction(file.id, "reject");
@@ -193,7 +200,7 @@ const ArchivosReportados = () => {
                           onClick={() => {
                             if (
                               window.confirm(
-                                "¿Estás seguro?  Esta acción es irreversible."
+                                "¿Estás seguro?  Esta acción es irreversible.",
                               )
                             ) {
                               handleAction(file.id, "delete");

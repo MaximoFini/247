@@ -1,4 +1,5 @@
-import { subjects, commissions, fileTypes } from "@/data/mockData";
+import { fileTypes } from "@/data/mockData";
+import { useFilterOptions } from "@/hooks/use-filter-options";
 
 interface FilterBarProps {
   selectedSubject: string;
@@ -17,6 +18,10 @@ const FilterBar = ({
   onCommissionChange,
   onFileTypeChange,
 }: FilterBarProps) => {
+  const { data: filterOptions } = useFilterOptions();
+  const subjects = filterOptions?.subjects ?? [];
+  const commissions = filterOptions?.commissions ?? [];
+
   return (
     <div className="flex flex-wrap items-center gap-2 sm:gap-3 lg:gap-4 border-2 border-primary bg-card p-2 sm:p-3 lg:p-4">
       <span className="font-mono text-[10px] sm:text-xs uppercase tracking-wider sm:tracking-widest text-muted-foreground w-full sm:w-auto">

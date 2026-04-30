@@ -103,8 +103,8 @@ export interface Archivo {
   comision_id: string;
   tipo: TipoArchivo;
   nombre: string;
-  drive_file_id: string;
-  drive_link: string;
+  r2_key: string;
+  file_url: string;
   tamanio_mb: number;
   extension: ExtensionArchivo;
   descargas: number;

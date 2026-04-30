@@ -31,7 +31,7 @@ const FILE_SELECT_FIELDS = `
   extension,
   tamanio_mb,
   descargas,
-  drive_link,
+  file_url,
   created_at,
   materia:materias(nombre),
   comision:comisiones(codigo),
@@ -50,7 +50,7 @@ const transformFile = (file: any): PublicFile => ({
   downloads: file.descargas,
   uploadDate: new Date(file.created_at).toLocaleDateString("es-AR"),
   uploadedBy: file.user?.email || "Anónimo",
-  link: file.drive_link,
+  link: file.file_url || "",
   extension: file.extension,
 });
 
@@ -82,12 +82,12 @@ async function fetchTopFiles(): Promise<PublicFile[]> {
 async function searchFiles(searchTerm: string): Promise<PublicFile[]> {
   // Sanitizar término de búsqueda (escapa %, _, \)
   const sanitizedTerm = sanitizeSearchInput(searchTerm, INPUT_LIMITS.SEARCH);
-  
+
   // Si después de sanitizar queda vacío, retornar vacío
   if (!sanitizedTerm) {
     return [];
   }
-  
+
   const { data, error } = await supabase
     .from("archivos")
     .select(FILE_SELECT_FIELDS)
@@ -150,7 +150,7 @@ export function useFilesWithSearch() {
 
   // Query para TOP 20 (carga inicial)
   const topFilesQuery = usePublicFiles();
-  
+
   // Query para búsqueda
   const searchQuery = usePublicFilesSearch(debouncedSearch);
 
@@ -166,7 +166,7 @@ export function useFilesWithSearch() {
   // Función de búsqueda con debounce optimizado
   const handleSearch = useCallback((term: string) => {
     setSearchTerm(term);
-    
+
     // Limpiar timer anterior
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
@@ -187,9 +187,12 @@ export function useFilesWithSearch() {
 
   // Determinar qué datos mostrar
   const isSearching = debouncedSearch.length >= 2;
-  const files = isSearching ? (searchQuery.data || []) : (topFilesQuery.data || []);
-  const isLoading = isSearching ? searchQuery.isLoading : topFilesQuery.isLoading;
-  const isSearchPending = searchTerm !== debouncedSearch && searchTerm.length > 0;
+  const files = isSearching ? searchQuery.data || [] : topFilesQuery.data || [];
+  const isLoading = isSearching
+    ? searchQuery.isLoading
+    : topFilesQuery.isLoading;
+  const isSearchPending =
+    searchTerm !== debouncedSearch && searchTerm.length > 0;
 
   return {
     files,

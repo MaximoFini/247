@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { supabase } from '@/lib/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import type { AdminArchivo } from '@/types/admin';
+import { useState, useEffect, useCallback, useRef } from "react";
+import { supabase } from "@/lib/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import type { AdminArchivo } from "@/types/admin";
 
 // Configuración de paginación
 const PAGE_SIZE = 30; // Archivos por página
@@ -13,7 +13,8 @@ const FILE_SELECT_FIELDS = `
   nombre,
   tipo,
   extension,
-  drive_link,
+  file_url,
+  r2_key,
   tamanio_mb,
   descargas,
   activo,
@@ -45,7 +46,8 @@ function transformFile(file: any): AdminArchivo {
     nombre: file.nombre,
     tipo: file.tipo,
     extension: file.extension,
-    drive_link: file.drive_link,
+    file_url: file.file_url,
+    r2_key: file.r2_key ?? null,
     tamanio_mb: file.tamanio_mb,
     descargas: file.descargas,
     activo: file.activo,
@@ -60,14 +62,14 @@ function transformFile(file: any): AdminArchivo {
 
 export function useAdminFiles(): UseAdminFilesReturn {
   const { loading: authLoading, user } = useAuth();
-  
+
   const [files, setFiles] = useState<AdminArchivo[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
-  
+
   // Ref para tracking de offset (evita re-renders)
   const offsetRef = useRef(0);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -79,7 +81,7 @@ export function useAdminFiles(): UseAdminFilesReturn {
       console.log("⏳ useAdminFiles: esperando auth...");
       return;
     }
-    
+
     if (!user?.id) {
       console.log("⚠️ useAdminFiles: sin usuario, limpiando data");
       setFiles([]);
@@ -100,7 +102,7 @@ export function useAdminFiles(): UseAdminFilesReturn {
 
     try {
       console.log("🔍 useAdminFiles: cargando archivos...");
-      
+
       // Timeout para la request
       const timeoutId = setTimeout(() => {
         if (abortControllerRef.current) {
@@ -111,17 +113,17 @@ export function useAdminFiles(): UseAdminFilesReturn {
 
       // Primero obtener el count total (query separada, más eficiente)
       const { count } = await supabase
-        .from('archivos')
-        .select('id', { count: 'exact', head: true })
+        .from("archivos")
+        .select("id", { count: "exact", head: true })
         .abortSignal(abortControllerRef.current.signal);
-      
+
       setTotalCount(count || 0);
 
       // Luego obtener primera página de datos
       const { data, error: queryError } = await supabase
-        .from('archivos')
+        .from("archivos")
         .select(FILE_SELECT_FIELDS)
-        .order('created_at', { ascending: false })
+        .order("created_at", { ascending: false })
         .range(0, PAGE_SIZE - 1)
         .abortSignal(abortControllerRef.current.signal);
 
@@ -129,11 +131,11 @@ export function useAdminFiles(): UseAdminFilesReturn {
 
       if (queryError) {
         // Ignorar errores de abort
-        if (queryError.message?.includes('abort')) {
+        if (queryError.message?.includes("abort")) {
           console.log("⏹️ useAdminFiles: request abortada");
           return;
         }
-        console.error('Error al cargar archivos:', queryError);
+        console.error("Error al cargar archivos:", queryError);
         setError(queryError.message);
         setFiles([]);
         return;
@@ -143,14 +145,18 @@ export function useAdminFiles(): UseAdminFilesReturn {
       setFiles(transformedFiles);
       setHasMore(transformedFiles.length === PAGE_SIZE);
       offsetRef.current = transformedFiles.length;
-      console.log("✅ useAdminFiles: cargados", transformedFiles.length, "archivos");
+      console.log(
+        "✅ useAdminFiles: cargados",
+        transformedFiles.length,
+        "archivos",
+      );
     } catch (err) {
       // Ignorar errores de abort
-      if (err instanceof Error && err.message?.includes('abort')) {
+      if (err instanceof Error && err.message?.includes("abort")) {
         return;
       }
-      console.error('Error inesperado:', err);
-      setError('Error al cargar archivos');
+      console.error("Error inesperado:", err);
+      setError("Error al cargar archivos");
       setFiles([]);
     } finally {
       setLoading(false);
@@ -166,26 +172,26 @@ export function useAdminFiles(): UseAdminFilesReturn {
 
     try {
       const { data, error: queryError } = await supabase
-        .from('archivos')
+        .from("archivos")
         .select(FILE_SELECT_FIELDS)
-        .order('created_at', { ascending: false })
+        .order("created_at", { ascending: false })
         .range(offsetRef.current, offsetRef.current + PAGE_SIZE - 1);
 
       if (queryError) {
-        console.error('Error al cargar más archivos:', queryError);
+        console.error("Error al cargar más archivos:", queryError);
         return;
       }
 
       const newFiles = (data || []).map(transformFile);
-      
+
       if (newFiles.length > 0) {
         setFiles((prev) => [...prev, ...newFiles]);
         offsetRef.current += newFiles.length;
       }
-      
+
       setHasMore(newFiles.length === PAGE_SIZE);
     } catch (err) {
-      console.error('Error inesperado al cargar más:', err);
+      console.error("Error inesperado al cargar más:", err);
     } finally {
       setLoadingMore(false);
     }
@@ -193,13 +199,36 @@ export function useAdminFiles(): UseAdminFilesReturn {
 
   const deleteFile = async (id: string): Promise<boolean> => {
     try {
-      const { error } = await supabase
-        .from('archivos')
-        .delete()
-        .eq('id', id);
+      // Obtener r2_key del archivo antes de borrar
+      const fileToDelete = files.find((f) => f.id === id);
+
+      // Intentar borrar de R2 (falla en silencio — el objeto queda huérfano pero no bloquea)
+      if (fileToDelete?.r2_key) {
+        try {
+          const session = await supabase.auth.getSession();
+          const token = session.data.session?.access_token;
+          if (token) {
+            await fetch(
+              `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-r2-file`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ r2Key: fileToDelete.r2_key }),
+              },
+            );
+          }
+        } catch (r2Err) {
+          console.error("Error al eliminar de R2 (no crítico):", r2Err);
+        }
+      }
+
+      const { error } = await supabase.from("archivos").delete().eq("id", id);
 
       if (error) {
-        console.error('Error al eliminar archivo:', error);
+        console.error("Error al eliminar archivo:", error);
         return false;
       }
 
@@ -207,51 +236,55 @@ export function useAdminFiles(): UseAdminFilesReturn {
       setTotalCount((prev) => prev - 1);
       return true;
     } catch (err) {
-      console.error('Error inesperado:', err);
+      console.error("Error inesperado:", err);
       return false;
     }
   };
 
-  const toggleActive = async (id: string, activo: boolean): Promise<boolean> => {
+  const toggleActive = async (
+    id: string,
+    activo: boolean,
+  ): Promise<boolean> => {
     try {
       const { error } = await supabase
-        .from('archivos')
+        .from("archivos")
         .update({ activo })
-        .eq('id', id);
+        .eq("id", id);
 
       if (error) {
-        console.error('Error al actualizar archivo:', error);
+        console.error("Error al actualizar archivo:", error);
         return false;
       }
 
-      setFiles((prev) =>
-        prev.map((f) => (f.id === id ? { ...f, activo } : f))
-      );
+      setFiles((prev) => prev.map((f) => (f.id === id ? { ...f, activo } : f)));
       return true;
     } catch (err) {
-      console.error('Error inesperado:', err);
+      console.error("Error inesperado:", err);
       return false;
     }
   };
 
-  const updateFile = async (id: string, updates: Partial<AdminArchivo>): Promise<boolean> => {
+  const updateFile = async (
+    id: string,
+    updates: Partial<AdminArchivo>,
+  ): Promise<boolean> => {
     try {
       const { error } = await supabase
-        .from('archivos')
+        .from("archivos")
         .update(updates)
-        .eq('id', id);
+        .eq("id", id);
 
       if (error) {
-        console.error('Error al actualizar archivo:', error);
+        console.error("Error al actualizar archivo:", error);
         return false;
       }
 
       setFiles((prev) =>
-        prev.map((f) => (f.id === id ? { ...f, ...updates } : f))
+        prev.map((f) => (f.id === id ? { ...f, ...updates } : f)),
       );
       return true;
     } catch (err) {
-      console.error('Error inesperado:', err);
+      console.error("Error inesperado:", err);
       return false;
     }
   };
@@ -260,7 +293,7 @@ export function useAdminFiles(): UseAdminFilesReturn {
     // ⚡ PATRÓN OBLIGATORIO: esperar que auth esté listo
     if (authLoading) return;
     fetchFiles();
-    
+
     // Cleanup: abortar requests pendientes al desmontar
     return () => {
       if (abortControllerRef.current) {
