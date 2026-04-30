@@ -64,6 +64,9 @@ const AdminMaterias = lazy(() => import("@/pages/admin/Materias"));
 const AdminComisiones = lazy(() => import("@/pages/admin/Comisiones"));
 const AdminAsignaciones = lazy(() => import("@/pages/admin/Asignaciones"));
 const AdminAvisos = lazy(() => import("@/pages/admin/Avisos"));
+const ForoPage = lazy(() => import("./pages/Foro"));
+const HiloPage = lazy(() => import("./pages/Hilo"));
+const AdminForo = lazy(() => import("@/pages/admin/Foro"));
 
 // Componente auxiliar con lazy (cargado después del mount inicial)
 const AlonsoFollower = lazy(() => import("./components/AlonsoFollower"));
@@ -110,6 +113,8 @@ const App = () => (
                 }
               />
               <Route path="/avisos" element={<Avisos />} />
+              <Route path="/foro" element={<ForoPage />} />
+              <Route path="/foro/:id" element={<HiloPage />} />
               <Route path="/privacy" element={<Privacy />} />
               <Route path="/terms" element={<Terms />} />
 
@@ -193,6 +198,14 @@ const App = () => (
                 element={
                   <AdminRoute>
                     <AdminAvisos />
+                  </AdminRoute>
+                }
+              />
+              <Route
+                path="/admin/foro"
+                element={
+                  <AdminRoute>
+                    <AdminForo />
                   </AdminRoute>
                 }
               />

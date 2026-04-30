@@ -142,6 +142,41 @@ export interface Rating {
   created_at: string;
 }
 
+// =========================================
+// Tipos para el módulo "Foro"
+// =========================================
+
+export interface HiloAutor {
+  id: string;
+  nombre: string;
+}
+
+export interface Hilo {
+  id: string;
+  user_id: string;
+  titulo: string;
+  contenido: string;
+  es_incognito: boolean;
+  activo: boolean;
+  respuestas_count: number;
+  created_at: string;
+  updated_at: string;
+  // join con users (solo presente cuando es_incognito = false)
+  autor?: HiloAutor | null;
+}
+
+export interface Respuesta {
+  id: string;
+  hilo_id: string;
+  user_id: string;
+  contenido: string;
+  es_incognito: boolean;
+  activo: boolean;
+  created_at: string;
+  // join con users (solo presente cuando es_incognito = false)
+  autor?: HiloAutor | null;
+}
+
 export const PUNTOS_POR_TIPO: Record<TipoArchivo, number> = {
   apunte: 90,
   resumen: 90,

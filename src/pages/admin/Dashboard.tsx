@@ -9,6 +9,7 @@ import {
   Heart,
   Link2,
   Megaphone,
+  MessageSquare,
 } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import { useAdminStats } from "@/hooks/use-admin-stats";
@@ -269,6 +270,13 @@ const AdminDashboard = () => {
             >
               <Megaphone className="h-8 w-8 text-primary mb-3" />
               <p className="font-mono text-lg text-primary">Gestionar Avisos</p>
+            </Link>
+            <Link
+              to="/admin/foro"
+              className="border-2 border-primary bg-background p-6 hover:bg-primary/10 transition-all"
+            >
+              <MessageSquare className="h-8 w-8 text-primary mb-3" />
+              <p className="font-mono text-lg text-primary">Moderar Foro</p>
             </Link>
           </div>
         </div>

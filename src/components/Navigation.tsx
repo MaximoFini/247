@@ -48,6 +48,12 @@ const Navigation = () => {
               AVISOS
             </Link>
             <Link
+              to="/foro"
+              className="font-mono text-[10px] sm:text-xs lg:text-sm uppercase tracking-wider lg:tracking-widest text-primary transition-all hover:text-primary/80 whitespace-nowrap"
+            >
+              FORO
+            </Link>
+            <Link
               to="/subir"
               className="font-mono text-[10px] sm:text-xs lg:text-sm uppercase tracking-wider lg:tracking-widest text-primary transition-all hover:text-primary/80 whitespace-nowrap"
             >
